@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<room>
+    <name>Plane</name>
+    <setup>false</setup>
+    <router>
+        <hostname>monteverde.local</hostname>
+        <port>46290</port>
+        <ssid></ssid>
+        <password></password>
+        <setup>false</setup>
+    </router>
+    <devices>
+        <device>
+            <name>Light</name>
+        </device>
+    </devices>
+</room>
