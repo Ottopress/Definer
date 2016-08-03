@@ -36,7 +36,8 @@ func main() {
 	Info.Println("-----------------")
 	Info.Println("Initializing Router...")
 	if !room.Router.IsSetup() {
-		Info.Println("Router is not setup.")
+		Error.Println("Router is not setup.")
+		os.Exit(1)
 	}
 	routerInitErr := room.Router.Initialize()
 	if routerInitErr != nil {
@@ -44,6 +45,7 @@ func main() {
 		os.Exit(1)
 	}
 	Info.Println("Router interface successfully initialized.")
+	Debug.Println(room.Router.Interface.Name)
 	Info.Println("Preparing to connect to \"" + room.Router.SSID + "\"...")
 	routerConnErr := room.Router.Connect()
 	if routerConnErr != nil {

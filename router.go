@@ -56,6 +56,16 @@ func (router *Router) Initialize() error {
 // provided network using the interface found in the
 // 'Initialize' phase.
 func (router *Router) Connect() error {
+	status, statusErr := router.Interface.Status()
+	if statusErr != nil {
+		return statusErr
+	}
+	if !status {
+		upErr := router.Interface.Up()
+		if upErr != nil {
+			return upErr
+		}
+	}
 	networks, networksErr := router.Interface.Scan()
 	if networksErr != nil {
 		return networksErr

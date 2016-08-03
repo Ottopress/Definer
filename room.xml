@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <room>
     <name>Plane</name>
-    <setup>false</setup>
+    <setup>true</setup>
     <router>
         <hostname>monteverde.local</hostname>
         <port>46290</port>
-        <ssid></ssid>
+        <ssid>United_Wi-Fi</ssid>
         <password></password>
-        <setup>false</setup>
+        <setup>true</setup>
     </router>
     <devices>
         <device>
