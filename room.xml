@@ -1,17 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<room>
-    <name>Plane</name>
-    <setup>true</setup>
+<definer>
     <router>
         <hostname>monteverde.local</hostname>
         <port>46290</port>
-        <ssid>United_Wi-Fi</ssid>
-        <password></password>
+        <ssid>dlink</ssid>
+        <password>Snickers01</password>
         <setup>true</setup>
     </router>
-    <devices>
-        <device>
-            <name>Light</name>
-        </device>
-    </devices>
-</room>
+    <room>
+        <name>Plane</name>
+        <setup>true</setup>
+        <devices>
+            <device>
+                <name>Light</name>
+            </device>
+        </devices>
+    </room>
+</definer>

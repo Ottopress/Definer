@@ -7,6 +7,14 @@ import (
 	"git.getcoffee.io/Ottopress/wifimanager"
 )
 
+var (
+	// DefaultPort is the default port that the router
+	// will attempt to bind to. It was chosen because it
+	// was marked 'Unassigned' by the IANA.
+	// See: http://www.iana.org/assignments/service-names-port-numbers/service-names-port-numbers.xhtml?&page=120
+	DefaultPort = 13789
+)
+
 // Router represents a physical routing device
 type Router struct {
 	XMLName   xml.Name `xml:"router"`
@@ -18,7 +26,7 @@ type Router struct {
 	Interface *wifimanager.WifiInterface
 }
 
-// BuildRouter returns
+// BuildRouter returns an unconfigured Router struct
 func BuildRouter() (*Router, error) {
 	hostname, hostnameErr := os.Hostname()
 	if hostnameErr != nil {
@@ -35,10 +43,15 @@ func BuildRouter() (*Router, error) {
 // IsSetup checks that the router has been properly
 // configured.
 func (router *Router) IsSetup() bool {
-	if router.SSID == "" {
-		return false
+	return router.Setup
+}
+
+// UpdateSetup checks the required fields and updates
+// the setup field to reflect their status
+func (router *Router) UpdateSetup() {
+	if router.SSID != "" {
+		router.Setup = true
 	}
-	return true
 }
 
 // Initialize initializes the Router's WiFi interface.

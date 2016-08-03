@@ -4,6 +4,15 @@ import (
 	"os"
 )
 
+const (
+	// EnvPhysical indicates that the environment is the
+	// physical device
+	EnvPhysical int = iota
+	// EnvEmulated indicates that the environemtn is emulated,
+	// probably for development
+	EnvEmulated
+)
+
 var (
 	// debugOut redirects debug logs to os.Stdout
 	debugOut = os.Stdout
@@ -14,45 +23,64 @@ var (
 	// errorOut redirects error logs to os.Stderr
 	errorOut = os.Stderr
 
-    // RoomPath is the path of the config for the room
-    // the device is defining.
-    RoomPath = "./room.xml"
-	// SelfRoom is the room struct representing the room
-    // the device
-	SelfRoom Room
+    // DefinerPath is the path of the config for the
+    // definer settings.
+    DefinerPath = "./definer.xml"
+	// SelfDefiner is the definer struct representing the
+    // definer.
+	SelfDefiner Definer
+	// Environment represents the environment this software
+	// is running under
+	Environment = EnvEmulated
 )
 
 func main() {
 	InitLog(debugOut, infoOut, warningOut, errorOut)
-    Info.Println("Ottopress Router starting...")
-    Info.Println("Initializing Room...")
-    room, roomErr := InitRoom(RoomPath)
-    if roomErr != nil {
-        Error.Println(roomErr.Error())
+    Info.Println("Ottopress Definer starting...")
+    Info.Println("Initializing Definer...")
+    definer, definerErr := InitDefiner(DefinerPath)
+    if definerErr != nil {
+        Error.Println(definerErr.Error())
         os.Exit(1)
     }
-    Info.Println("Room successfully initialized.")
-    Info.Println("Current room: " + room.Name)
-	Info.Println("-----------------")
-	Info.Println("Initializing Router...")
-	if !room.Router.IsSetup() {
-		Error.Println("Router is not setup.")
-		os.Exit(1)
-	}
-	routerInitErr := room.Router.Initialize()
+
+	routerInitErr := definer.Router.Initialize()
 	if routerInitErr != nil {
 		Error.Println(routerInitErr.Error())
 		os.Exit(1)
 	}
 	Info.Println("Router interface successfully initialized.")
-	Debug.Println(room.Router.Interface.Name)
-	Info.Println("Preparing to connect to \"" + room.Router.SSID + "\"...")
-	routerConnErr := room.Router.Connect()
+	Debug.Println(definer.Router.Interface.Name)
+	Info.Println("Preparing to connect to \"" + definer.Router.SSID + "\"...")
+	routerConnErr := definer.Router.Connect()
 	if routerConnErr != nil {
 		Error.Println(routerConnErr.Error())
 		os.Exit(1)
 	}
 	Info.Println("Connection successful!")
 	Info.Println("Waiting...")
+	console := NewConsoleServer(definer)
+	console.AddHandler("config-router", HandleConfigRouter)
+	go console.Listen()
 	for {}
+}
+
+// HandleConfigRouter lol
+func HandleConfigRouter(server Server, core string, args ...string) {
+	shouldSkip := false
+	for index, item := range args {
+		if shouldSkip {
+			shouldSkip = false
+			continue
+		}
+		switch item {
+		case "ssid":
+			server.GetDefiner().Router.SSID = args[index+1]
+			shouldSkip = true
+		case "password":
+			server.GetDefiner().Router.Password = args[index+1]
+			shouldSkip = true
+		}
+	}
+	Debug.Println(server.GetDefiner().Router)
 }
