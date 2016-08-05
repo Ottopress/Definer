@@ -8,7 +8,6 @@ type Room struct {
 	XMLName xml.Name `xml:"room"`
 	Name    string   `xml:"name"`
 	Setup   bool     `xml:"setup"`
-	Router  Router   `xml:"router"`
 	Devices []Device `xml:"devices>device"`
 }
 
@@ -36,10 +35,6 @@ func (room *Room) IsSetup() bool {
 // updates the setup field to teflect their status
 func (room *Room) UpdateSetup() {
 	if room.Name == "" {
-		room.Setup = false
-		return
-	}
-	if !room.Router.IsSetup() {
 		room.Setup = false
 		return
 	}

@@ -17,13 +17,13 @@ var (
 
 // Router represents a physical routing device
 type Router struct {
-	XMLName   xml.Name `xml:"router"`
-	Hostname  string   `xml:"hostname"`
-	Port      int      `xml:"port"`
-	SSID      string   `xml:"ssid"`
-	Password  string   `xml:"password"`
-	Setup     bool     `xml:"setup"`
-	Interface *wifimanager.WifiInterface
+	XMLName   xml.Name                   `xml:"router"`
+	Hostname  string                     `xml:"hostname"`
+	Port      int                        `xml:"port"`
+	SSID      string                     `xml:"ssid"`
+	Password  string                     `xml:"password"`
+	Setup     bool                       `xml:"setup"`
+	Interface *wifimanager.WifiInterface `xml:"-"`
 }
 
 // BuildRouter returns an unconfigured Router struct

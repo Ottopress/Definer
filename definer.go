@@ -57,7 +57,7 @@ func BuildDefiner() (*Definer, error) {
 // WriteDefiner formats and exports the definer struct to the
 // file at the given location.
 func (definer *Definer) WriteDefiner(path string) error {
-	definerData, definerErr := xml.Marshal(definer)
+	definerData, definerErr := xml.MarshalIndent(definer, "", "    ")
 	if definerErr != nil {
 		return definerErr
 	}

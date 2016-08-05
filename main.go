@@ -2,6 +2,10 @@ package main
 
 import (
 	"os"
+	"time"
+	"os/signal"
+	"syscall"
+	"encoding/xml"
 )
 
 const (
@@ -43,7 +47,19 @@ func main() {
         Error.Println(definerErr.Error())
         os.Exit(1)
     }
-
+	Info.Println("Initializing Cleanup Handler...")
+	InitCleanup(definer)
+	Info.Println("Initializing Console Server...")
+	serverConsole := NewConsoleServer(definer)
+	serverConsole.AddHandler("router", HandleRouter)
+	go serverConsole.Listen()
+	if !definer.Router.IsSetup() {
+		Info.Println("Router isn't setup. Awaiting configuration...")
+		for !definer.Router.IsSetup() {
+			time.Sleep(time.Duration(1) * time.Second)
+		}
+	}
+	Info.Println("Router configured.")
 	routerInitErr := definer.Router.Initialize()
 	if routerInitErr != nil {
 		Error.Println(routerInitErr.Error())
@@ -59,14 +75,60 @@ func main() {
 	}
 	Info.Println("Connection successful!")
 	Info.Println("Waiting...")
-	console := NewConsoleServer(definer)
-	console.AddHandler("config-router", HandleConfigRouter)
-	go console.Listen()
 	for {}
 }
 
-// HandleConfigRouter lol
-func HandleConfigRouter(server Server, core string, args ...string) {
+// InitCleanup initializes the cleanup handler
+func InitCleanup(definer *Definer) {
+	chanInterrupt := make(chan os.Signal, 1)
+	signal.Notify(chanInterrupt, os.Interrupt)
+	signal.Notify(chanInterrupt, syscall.SIGTERM)
+	go func() {
+		<-chanInterrupt
+		cleanup(definer)
+		os.Exit(1)
+	}()
+}
+
+// cleanup ensures that all connections are closed,
+// files are written, etc. before the software restarts
+func cleanup(definer *Definer) {
+	writeErr := definer.WriteDefiner(DefinerPath)
+	if writeErr != nil {
+		Error.Println(writeErr.Error())
+		return
+	}
+}
+
+// HandleRouter handles router-specific commands
+// such as 'router get/set'
+func HandleRouter(server Server, core string, args ...string) {
+	if len(args) < 1 {
+		Error.Println("router: valid subcommands are: 'get', 'set'")
+		return
+	}
+	switch args[0] {
+	case "get":
+		HandleRouterGet(server, args[1:]...)
+	case "set":
+		HandleRouterSet(server, args[1:]...)
+	}
+}
+
+// HandleRouterGet handles the router-specific get command
+// and prints out the XML version of the router
+func HandleRouterGet(server Server, args ...string) {
+	routerData, routerErr := xml.MarshalIndent(server.GetDefiner().Router, "  ", "    ")
+	if routerErr != nil {
+		Error.Println(routerErr.Error())
+		return
+	}
+	Info.Println("\n" + string(routerData))
+}
+
+// HandleRouterSet handles the router-specific set command
+// and sets fields on the router object
+func HandleRouterSet(server Server, args ...string) {
 	shouldSkip := false
 	for index, item := range args {
 		if shouldSkip {
@@ -82,5 +144,5 @@ func HandleConfigRouter(server Server, core string, args ...string) {
 			shouldSkip = true
 		}
 	}
-	Debug.Println(server.GetDefiner().Router)
+	server.GetDefiner().Router.UpdateSetup()
 }
