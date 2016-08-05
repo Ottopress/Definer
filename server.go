@@ -5,6 +5,11 @@ import (
 	"os"
 )
 
+var (
+	// ConsoleServ server instance. Used for console logging/commands.
+	ConsoleServ *ConsoleServer
+)
+
 // Server represents a communication system of the definer
 type Server interface {
 	Listen() error
@@ -18,11 +23,25 @@ type ConsoleServer struct {
 	Definer  *Definer
 }
 
+// InitServers setups up each of the servers and sets up
+// their basic handlers.
+func InitServers(definer *Definer) {
+	ConsoleServ = NewConsoleServer(definer)
+	setupHandlers()
+}
+
+// setupHandlers adds all the pre-established handler functions
+// to their respective servers.
+// NOTE: THIS IS NOT AN AUTOMATIC PROCESS. THIS IS DONE MANUALLY.
+func setupHandlers() {
+	ConsoleServ.AddHandler("router", HandleRouter)
+}
+
 // NewConsoleServer returns a new ConsoleServer
-func NewConsoleServer(Definer *Definer) *ConsoleServer {
+func NewConsoleServer(definer *Definer) *ConsoleServer {
 	return &ConsoleServer{
 		Handlers: make(map[string]func(server Server, core string, args ...string)),
-		Definer:  Definer,
+		Definer:  definer,
 	}
 }
 

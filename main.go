@@ -1,11 +1,10 @@
 package main
 
 import (
+	"encoding/xml"
 	"os"
-	"time"
 	"os/signal"
 	"syscall"
-	"encoding/xml"
 )
 
 const (
@@ -15,6 +14,16 @@ const (
 	// EnvEmulated indicates that the environemtn is emulated,
 	// probably for development
 	EnvEmulated
+)
+
+const (
+	// OttopressHeader ...
+	OttopressHeader = `
+    _____  _______ _______  _____   _____   ______ _______ _______ _______
+   |     |    |       |    |     | |_____] |_____/ |______ |______ |______
+   |_____|    |       |    |_____| |       |    \_ |______ ______| ______|
+=============================================================================`
+
 )
 
 var (
@@ -27,11 +36,11 @@ var (
 	// errorOut redirects error logs to os.Stderr
 	errorOut = os.Stderr
 
-    // DefinerPath is the path of the config for the
-    // definer settings.
-    DefinerPath = "./definer.xml"
+	// DefinerPath is the path of the config for the
+	// definer settings.
+	DefinerPath = "./definer.xml"
 	// SelfDefiner is the definer struct representing the
-    // definer.
+	// definer.
 	SelfDefiner Definer
 	// Environment represents the environment this software
 	// is running under
@@ -40,40 +49,25 @@ var (
 
 func main() {
 	InitLog(debugOut, infoOut, warningOut, errorOut)
-    Info.Println("Ottopress Definer starting...")
-    Info.Println("Initializing Definer...")
-    definer, definerErr := InitDefiner(DefinerPath)
-    if definerErr != nil {
-        Error.Println(definerErr.Error())
-        os.Exit(1)
-    }
+	Info.Println(OttopressHeader)
+	Info.Println("Ottopress Definer starting...")
+	Info.Println("Initializing Definer...")
+	definer, definerErr := InitDefiner(DefinerPath)
+	if definerErr != nil {
+		Error.Println(definerErr.Error())
+		os.Exit(1)
+	}
+	Info.Println("Definer initialized!")
 	Info.Println("Initializing Cleanup Handler...")
 	InitCleanup(definer)
-	Info.Println("Initializing Console Server...")
-	serverConsole := NewConsoleServer(definer)
-	serverConsole.AddHandler("router", HandleRouter)
-	go serverConsole.Listen()
-	if !definer.Router.IsSetup() {
-		Info.Println("Router isn't setup. Awaiting configuration...")
-		for !definer.Router.IsSetup() {
-			time.Sleep(time.Duration(1) * time.Second)
-		}
-	}
-	Info.Println("Router configured.")
-	routerInitErr := definer.Router.Initialize()
-	if routerInitErr != nil {
-		Error.Println(routerInitErr.Error())
-		os.Exit(1)
-	}
-	Info.Println("Router interface successfully initialized.")
-	Debug.Println(definer.Router.Interface.Name)
-	Info.Println("Preparing to connect to \"" + definer.Router.SSID + "\"...")
-	routerConnErr := definer.Router.Connect()
-	if routerConnErr != nil {
-		Error.Println(routerConnErr.Error())
-		os.Exit(1)
-	}
-	Info.Println("Connection successful!")
+	Info.Println("Cleanup Handler initialized!")
+	Info.Println("Initialize Servers...")
+	InitServers(definer)
+	go ConsoleServ.Listen()
+	Info.Println("Servers initialized!")
+	Info.Println("Initializing Router...")
+	definer.Router.Initialize()
+	Info.Println("Router initialized!")
 	Info.Println("Waiting...")
 	for {}
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/xml"
 	"os"
+	"time"
 
 	"git.getcoffee.io/Ottopress/wifimanager"
 )
@@ -54,8 +55,32 @@ func (router *Router) UpdateSetup() {
 	}
 }
 
-// Initialize initializes the Router's WiFi interface.
-func (router *Router) Initialize() error {
+// Initialize the Router and it's connection
+func (router *Router) Initialize() {
+	if !router.IsSetup() {
+		Info.Println("Router isn't setup. Awaiting configuration...")
+		for !router.IsSetup() {
+			time.Sleep(time.Duration(1) * time.Second)
+		}
+	}
+	Info.Println("Router configured.")
+	routerInitErr := router.InitInterface()
+	if routerInitErr != nil {
+		Error.Println(routerInitErr.Error())
+		os.Exit(1)
+	}
+	Info.Println("Router interface successfully initialized.")
+	Info.Println("Preparing to connect to \"" + router.SSID + "\"...")
+	routerConnErr := router.Connect()
+	if routerConnErr != nil {
+		Error.Println(routerConnErr.Error())
+		os.Exit(1)
+	}
+	Info.Println("Connection successful!")
+}
+
+// InitInterface initializes the Router's WiFi interface.
+func (router *Router) InitInterface() error {
 	interfaces, interfacesErr := wifimanager.GetWifiInterfaces()
 	if interfacesErr != nil {
 		return interfacesErr
