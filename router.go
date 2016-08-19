@@ -73,6 +73,11 @@ func (router *Router) Initialize() {
 	Info.Println("Preparing to connect to \"" + router.SSID + "\"...")
 	routerConnErr := router.Connect()
 	if routerConnErr != nil {
+		if routerConnErr == wifimanager.ErrMissingAP {
+			router.Setup = false
+			router.Initialize()
+			return
+		}
 		Error.Println(routerConnErr.Error())
 		os.Exit(1)
 	}
