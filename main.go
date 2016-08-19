@@ -23,7 +23,6 @@ const (
    |     |    |       |    |     | |_____] |_____/ |______ |______ |______
    |_____|    |       |    |_____| |       |    \_ |______ ______| ______|
 =============================================================================`
-
 )
 
 var (
@@ -68,8 +67,10 @@ func main() {
 	Info.Println("Initializing Router...")
 	definer.Router.Initialize()
 	Info.Println("Router initialized!")
+	go WifiServ.Listen()
 	Info.Println("Waiting...")
-	for {}
+	for {
+	}
 }
 
 // InitCleanup initializes the cleanup handler

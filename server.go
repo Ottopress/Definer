@@ -9,7 +9,7 @@ var (
 
 // Server represents a communication system of the definer
 type Server interface {
-	Listen() error
+	Listen()
 	AddHandler(identifier string, handler func(server Server, core string, args ...string))
 	GetDefiner() *Definer
 }
@@ -18,6 +18,7 @@ type Server interface {
 // their basic handlers.
 func InitServers(definer *Definer) {
 	ConsoleServ = NewConsoleServer(definer)
+	WifiServ = NewWifiServer(definer)
 	setupHandlers()
 }
 

@@ -21,7 +21,7 @@ func NewConsoleServer(definer *Definer) *ConsoleServer {
 
 // Listen begins listening for console commands that have been registered
 // in the handlers.
-func (console *ConsoleServer) Listen() error {
+func (console *ConsoleServer) Listen() {
 	scanner := bufio.NewScanner(os.Stdin)
 	for scanner.Scan() {
 		cmdArgs := ToArgv(scanner.Text())
@@ -29,9 +29,11 @@ func (console *ConsoleServer) Listen() error {
 	}
 	scannerErr := scanner.Err()
 	if scannerErr != nil {
-		return scannerErr
+		Error.Println("console: scanner encountered error: " + scannerErr.Error())
+		return
 	}
-	return nil
+	Error.Println("console: an unexpected error occured")
+	return
 }
 
 // AddHandler links a command to a handler function

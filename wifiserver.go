@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/binary"
+	"git.getcoffee.io/ottopress/definer/protos"
+	"github.com/golang/protobuf/proto"
 	"io"
 	"net"
 	"strconv"
@@ -23,15 +25,17 @@ func NewWifiServer(definer *Definer) *WifiServer {
 
 // Listen beings listening for incoming protobuf packets and hands them
 // off for parsing.
-func (wifiServ *WifiServer) Listen() error {
+func (wifiServ *WifiServer) Listen() {
 	ln, lnErr := net.Listen("tcp", ":"+strconv.Itoa(DefaultPort))
 	if lnErr != nil {
-		return lnErr
+		Error.Println("wifiserv: couldn't start listener: " + lnErr.Error())
+		return
 	}
 	for {
 		conn, connErr := ln.Accept()
 		if connErr != nil {
-			return connErr
+			Error.Println("wifiserv: connection err: " + connErr.Error())
+			return
 		}
 		go readProto(conn)
 	}
@@ -54,5 +58,11 @@ func readProto(reader io.Reader) {
 }
 
 func parseProto(protoData []byte) {
-
+	var wrapper packets.Wrapper
+	unmarshErr := proto.Unmarshal(protoData, &wrapper)
+	if unmarshErr != nil {
+		Error.Println("protobuf: couldn't unmarshal packet: " + unmarshErr.Error())
+		return
+	}
+	Debug.Println("received protobuf packet: ", wrapper)
 }
