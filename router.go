@@ -3,7 +3,6 @@ package main
 import (
 	"encoding/xml"
 	"os"
-	"time"
 
 	"git.getcoffee.io/Ottopress/wifimanager"
 )
@@ -56,32 +55,22 @@ func (router *Router) UpdateSetup() {
 }
 
 // Initialize the Router and it's connection
-func (router *Router) Initialize() {
-	if !router.IsSetup() {
-		Info.Println("Router isn't setup. Awaiting configuration...")
-		for !router.IsSetup() {
-			time.Sleep(time.Duration(1) * time.Second)
-		}
-	}
-	Info.Println("Router configured.")
+func (router *Router) Initialize() error {
 	routerInitErr := router.InitInterface()
 	if routerInitErr != nil {
-		Error.Println(routerInitErr.Error())
-		os.Exit(1)
+		router.Setup = false
+		return routerInitErr
 	}
 	Info.Println("Router interface successfully initialized.")
 	Info.Println("Preparing to connect to \"" + router.SSID + "\"...")
 	routerConnErr := router.Connect()
 	if routerConnErr != nil {
-		if routerConnErr == wifimanager.ErrMissingAP {
-			router.Setup = false
-			router.Initialize()
-			return
-		}
-		Error.Println(routerConnErr.Error())
-		os.Exit(1)
+		Debug.Println(routerConnErr)
+		return routerConnErr
 	}
 	Info.Println("Connection successful!")
+	router.Setup = true
+	return nil
 }
 
 // InitInterface initializes the Router's WiFi interface.
@@ -99,10 +88,12 @@ func (router *Router) InitInterface() error {
 // provided network using the interface found in the
 // 'Initialize' phase.
 func (router *Router) Connect() error {
+	Debug.Println("Connecting...")
 	status, statusErr := router.Interface.Status()
 	if statusErr != nil {
 		return statusErr
 	}
+	Debug.Println("Got status:", status)
 	if !status {
 		upErr := router.Interface.Up()
 		if upErr != nil {
@@ -113,6 +104,7 @@ func (router *Router) Connect() error {
 	if networksErr != nil {
 		return networksErr
 	}
+	Debug.Println("Got networks:", networks)
 	accessPoints, accessPointsErr := wifimanager.GetAPs(router.SSID, networks)
 	if accessPointsErr != nil {
 		return accessPointsErr
@@ -121,6 +113,7 @@ func (router *Router) Connect() error {
 	if accessPointErr != nil {
 		return accessPointErr
 	}
+	Debug.Println("Got AP:", accessPoint)
 	accessPoint.UpdateSecurityKey(router.Password)
 	router.Interface.UpdateNetwork(accessPoint)
 	disconnectErr := router.Interface.Disconnect()

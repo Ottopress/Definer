@@ -10,8 +10,8 @@ var (
 // Server represents a communication system of the definer
 type Server interface {
 	Listen()
-	AddHandler(identifier string, handler func(server Server, core string, args ...string))
 	GetDefiner() *Definer
+	GetHandler() *Handler
 }
 
 // InitServers setups up each of the servers and sets up
@@ -19,12 +19,4 @@ type Server interface {
 func InitServers(definer *Definer) {
 	ConsoleServ = NewConsoleServer(definer)
 	WifiServ = NewWifiServer(definer)
-	setupHandlers()
-}
-
-// setupHandlers adds all the pre-established handler functions
-// to their respective servers.
-// NOTE: THIS IS NOT AN AUTOMATIC PROCESS. THIS IS DONE MANUALLY.
-func setupHandlers() {
-	ConsoleServ.AddHandler("router", HandleRouter)
 }

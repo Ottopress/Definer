@@ -2,8 +2,8 @@
     <router>
         <hostname>monteverde.local</hostname>
         <port>46290</port>
-        <ssid>dlink</ssid>
-        <password>Snickers01</password>
+        <ssid>xfinitywifi</ssid>
+        <password></password>
         <setup>true</setup>
     </router>
     <room>

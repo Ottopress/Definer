@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/xml"
 	"os"
 	"os/signal"
 	"syscall"
@@ -63,11 +62,14 @@ func main() {
 	Info.Println("Initialize Servers...")
 	InitServers(definer)
 	go ConsoleServ.Listen()
+	go WifiServ.Listen()
 	Info.Println("Servers initialized!")
 	Info.Println("Initializing Router...")
-	definer.Router.Initialize()
+	routerInitErr := definer.Router.Initialize()
+	if routerInitErr != nil {
+		Error.Println(routerInitErr)
+	}
 	Info.Println("Router initialized!")
-	go WifiServ.Listen()
 	Info.Println("Waiting...")
 	for {
 	}
@@ -93,51 +95,4 @@ func cleanup(definer *Definer) {
 		Error.Println(writeErr.Error())
 		return
 	}
-}
-
-// HandleRouter handles router-specific commands
-// such as 'router get/set'
-func HandleRouter(server Server, core string, args ...string) {
-	if len(args) < 1 {
-		Error.Println("router: valid subcommands are: 'get', 'set'")
-		return
-	}
-	switch args[0] {
-	case "get":
-		HandleRouterGet(server, args[1:]...)
-	case "set":
-		HandleRouterSet(server, args[1:]...)
-	}
-}
-
-// HandleRouterGet handles the router-specific get command
-// and prints out the XML version of the router
-func HandleRouterGet(server Server, args ...string) {
-	routerData, routerErr := xml.MarshalIndent(server.GetDefiner().Router, "  ", "    ")
-	if routerErr != nil {
-		Error.Println(routerErr.Error())
-		return
-	}
-	Info.Println("\n" + string(routerData))
-}
-
-// HandleRouterSet handles the router-specific set command
-// and sets fields on the router object
-func HandleRouterSet(server Server, args ...string) {
-	shouldSkip := false
-	for index, item := range args {
-		if shouldSkip {
-			shouldSkip = false
-			continue
-		}
-		switch item {
-		case "ssid":
-			server.GetDefiner().Router.SSID = args[index+1]
-			shouldSkip = true
-		case "password":
-			server.GetDefiner().Router.Password = args[index+1]
-			shouldSkip = true
-		}
-	}
-	server.GetDefiner().Router.UpdateSetup()
 }

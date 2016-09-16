@@ -2,25 +2,30 @@ package main
 
 import (
 	"encoding/binary"
-	"git.getcoffee.io/ottopress/definer/protos"
-	"github.com/golang/protobuf/proto"
 	"io"
 	"net"
 	"strconv"
+
+	"git.getcoffee.io/ottopress/definer/protos"
+	"github.com/golang/protobuf/proto"
 )
 
 // WifiServer represents a wifi-based communication system
 type WifiServer struct {
-	Handlers map[string]func(server Server, core string, args ...string)
-	Definer  *Definer
+	Handler *Handler
+	Definer *Definer
 }
 
 // NewWifiServer returns a new WifiServer
 func NewWifiServer(definer *Definer) *WifiServer {
-	return &WifiServer{
-		Handlers: make(map[string]func(server Server, core string, args ...string)),
-		Definer:  definer,
+	wifiServ := &WifiServer{
+		Definer: definer,
 	}
+	handler := &Handler{
+		Server: wifiServ,
+	}
+	wifiServ.Handler = handler
+	return wifiServ
 }
 
 // Listen beings listening for incoming protobuf packets and hands them
@@ -37,32 +42,56 @@ func (wifiServ *WifiServer) Listen() {
 			Error.Println("wifiserv: connection err: " + connErr.Error())
 			return
 		}
-		go readProto(conn)
+		go wifiServ.handleProto(conn)
 	}
 }
 
-func readProto(reader io.Reader) {
+func (wifiServ *WifiServer) handleProto(conn net.Conn) {
+	protoData, protoReadErr := wifiServ.readProto(conn)
+	if protoReadErr != nil {
+		Error.Println("wifiserv: couldn't handle proto:", protoReadErr.Error())
+		return
+	}
+	protoWrapper, protoParseErr := wifiServ.parseProto(protoData)
+	if protoParseErr != nil {
+		Error.Println("wifiserv: couldn't parse proto:", protoParseErr.Error())
+		return
+	}
+	handlerErr := wifiServ.Handler.Handle(conn, &protoWrapper)
+	if handlerErr != nil {
+		Error.Println("wifiserv: couldn't handle proto:", handlerErr)
+	}
+}
+
+func (wifiServ *WifiServer) readProto(reader io.Reader) ([]byte, error) {
 	packetLen := make([]byte, 2)
 	_, lenErr := reader.Read(packetLen)
 	if lenErr != nil {
-		Error.Println("protobuf: couldn't parse packet length: " + lenErr.Error())
-		return
+		return packetLen, lenErr
 	}
 	packetData := make([]byte, binary.BigEndian.Uint16(packetLen))
 	_, dataErr := reader.Read(packetData)
 	if dataErr != nil {
-		Error.Println("protobuf: data couldn't be read: " + dataErr.Error())
-		return
+		return packetData, dataErr
 	}
-	parseProto(packetData)
+	return packetData, nil
 }
 
-func parseProto(protoData []byte) {
+func (wifiServ *WifiServer) parseProto(protoData []byte) (packets.Wrapper, error) {
 	var wrapper packets.Wrapper
 	unmarshErr := proto.Unmarshal(protoData, &wrapper)
 	if unmarshErr != nil {
-		Error.Println("protobuf: couldn't unmarshal packet: " + unmarshErr.Error())
-		return
+		return packets.Wrapper{}, unmarshErr
 	}
-	Debug.Println("received protobuf packet: ", wrapper)
+	return wrapper, nil
+}
+
+// GetHandler returns the server instance's handler
+func (wifiServ *WifiServer) GetHandler() *Handler {
+	return wifiServ.Handler
+}
+
+// GetDefiner returns the server instance's definer
+func (wifiServ *WifiServer) GetDefiner() *Definer {
+	return wifiServ.Definer
 }
