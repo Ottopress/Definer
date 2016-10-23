@@ -2,8 +2,8 @@
     <router>
         <hostname>monteverde.local</hostname>
         <port>46290</port>
-        <ssid>xfinitywifi</ssid>
-        <password></password>
+        <ssid>PrettiestWifi</ssid>
+        <password>abcdefghijklmnopqrstuvwxyz</password>
         <setup>true</setup>
     </router>
     <room>

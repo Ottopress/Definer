@@ -4,7 +4,7 @@ import (
 	"encoding/xml"
 	"os"
 
-	"git.getcoffee.io/Ottopress/wifimanager"
+	wifimanager "github.com/ottopress/WifiManager"
 )
 
 var (
@@ -100,10 +100,12 @@ func (router *Router) Connect() error {
 			return upErr
 		}
 	}
+	Debug.Println("Starting Scan")
 	networks, networksErr := router.Interface.Scan()
 	if networksErr != nil {
 		return networksErr
 	}
+	Debug.Println("Ending Scan")
 	Debug.Println("Got networks:", networks)
 	accessPoints, accessPointsErr := wifimanager.GetAPs(router.SSID, networks)
 	if accessPointsErr != nil {
