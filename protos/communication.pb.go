@@ -2,20 +2,6 @@
 // source: communication.proto
 // DO NOT EDIT!
 
-/*
-Package packets is a generated protocol buffer package.
-
-It is generated from these files:
-	communication.proto
-
-It has these top-level messages:
-	Wrapper
-	GeneralErrorResponse
-	IntroductionServer
-	RouterConfigurationRequest
-	RouterConfigurationResponse
-	RoomConfigurationRequest
-*/
 package packets
 
 import proto "github.com/golang/protobuf/proto"
@@ -27,166 +13,196 @@ var _ = proto.Marshal
 var _ = fmt.Errorf
 var _ = math.Inf
 
-// This is a compile-time assertion to ensure that this generated file
-// is compatible with the proto package it is being compiled against.
-// A compilation error at this line likely means your copy of the
-// proto package needs to be updated.
-const _ = proto.ProtoPackageIsVersion2 // please upgrade the proto package
-
-type Wrapper_Header_Type int32
+type Packet_Header_Type int32
 
 const (
-	Wrapper_Header_REQUEST  Wrapper_Header_Type = 0
-	Wrapper_Header_RESPONSE Wrapper_Header_Type = 1
-	Wrapper_Header_SERVER   Wrapper_Header_Type = 2
+	Packet_Header_REQUEST  Packet_Header_Type = 0
+	Packet_Header_RESPONSE Packet_Header_Type = 1
+	Packet_Header_PASSIVE  Packet_Header_Type = 2
 )
 
-var Wrapper_Header_Type_name = map[int32]string{
+var Packet_Header_Type_name = map[int32]string{
 	0: "REQUEST",
 	1: "RESPONSE",
-	2: "SERVER",
+	2: "PASSIVE",
 }
-var Wrapper_Header_Type_value = map[string]int32{
+var Packet_Header_Type_value = map[string]int32{
 	"REQUEST":  0,
 	"RESPONSE": 1,
-	"SERVER":   2,
+	"PASSIVE":  2,
 }
 
-func (x Wrapper_Header_Type) String() string {
-	return proto.EnumName(Wrapper_Header_Type_name, int32(x))
+func (x Packet_Header_Type) String() string {
+	return proto.EnumName(Packet_Header_Type_name, int32(x))
 }
-func (Wrapper_Header_Type) EnumDescriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 0, 0} }
+func (Packet_Header_Type) EnumDescriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 0, 0} }
 
-type Wrapper struct {
-	Header *Wrapper_Header `protobuf:"bytes,1,opt,name=header" json:"header,omitempty"`
+type Packet struct {
+	Header *Packet_Header `protobuf:"bytes,1,opt,name=header" json:"header,omitempty"`
 	// Types that are valid to be assigned to Body:
-	//	*Wrapper_Intro
-	//	*Wrapper_RouterConfigReq
-	//	*Wrapper_RoomConfigReq
-	//	*Wrapper_ErrorResponse
-	Body isWrapper_Body `protobuf_oneof:"body"`
+	//	*Packet_Intro
+	//	*Packet_RouterConfigReq
+	//	*Packet_RoomConfigReq
+	//	*Packet_ErrorResponse
+	//	*Packet_DeviceTransfer
+	//	*Packet_Command
+	Body isPacket_Body `protobuf_oneof:"body"`
 }
 
-func (m *Wrapper) Reset()                    { *m = Wrapper{} }
-func (m *Wrapper) String() string            { return proto.CompactTextString(m) }
-func (*Wrapper) ProtoMessage()               {}
-func (*Wrapper) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0} }
+func (m *Packet) Reset()                    { *m = Packet{} }
+func (m *Packet) String() string            { return proto.CompactTextString(m) }
+func (*Packet) ProtoMessage()               {}
+func (*Packet) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0} }
 
-type isWrapper_Body interface {
-	isWrapper_Body()
+type isPacket_Body interface {
+	isPacket_Body()
 }
 
-type Wrapper_Intro struct {
-	Intro *IntroductionServer `protobuf:"bytes,2,opt,name=intro,oneof"`
+type Packet_Intro struct {
+	Intro *IntroductionPassive `protobuf:"bytes,2,opt,name=intro,oneof"`
 }
-type Wrapper_RouterConfigReq struct {
+type Packet_RouterConfigReq struct {
 	RouterConfigReq *RouterConfigurationRequest `protobuf:"bytes,3,opt,name=routerConfigReq,oneof"`
 }
-type Wrapper_RoomConfigReq struct {
+type Packet_RoomConfigReq struct {
 	RoomConfigReq *RoomConfigurationRequest `protobuf:"bytes,4,opt,name=roomConfigReq,oneof"`
 }
-type Wrapper_ErrorResponse struct {
+type Packet_ErrorResponse struct {
 	ErrorResponse *GeneralErrorResponse `protobuf:"bytes,5,opt,name=errorResponse,oneof"`
 }
+type Packet_DeviceTransfer struct {
+	DeviceTransfer *DeviceTransferPassive `protobuf:"bytes,6,opt,name=deviceTransfer,oneof"`
+}
+type Packet_Command struct {
+	Command *Command `protobuf:"bytes,99,opt,name=command,oneof"`
+}
 
-func (*Wrapper_Intro) isWrapper_Body()           {}
-func (*Wrapper_RouterConfigReq) isWrapper_Body() {}
-func (*Wrapper_RoomConfigReq) isWrapper_Body()   {}
-func (*Wrapper_ErrorResponse) isWrapper_Body()   {}
+func (*Packet_Intro) isPacket_Body()           {}
+func (*Packet_RouterConfigReq) isPacket_Body() {}
+func (*Packet_RoomConfigReq) isPacket_Body()   {}
+func (*Packet_ErrorResponse) isPacket_Body()   {}
+func (*Packet_DeviceTransfer) isPacket_Body()  {}
+func (*Packet_Command) isPacket_Body()         {}
 
-func (m *Wrapper) GetBody() isWrapper_Body {
+func (m *Packet) GetBody() isPacket_Body {
 	if m != nil {
 		return m.Body
 	}
 	return nil
 }
 
-func (m *Wrapper) GetHeader() *Wrapper_Header {
+func (m *Packet) GetHeader() *Packet_Header {
 	if m != nil {
 		return m.Header
 	}
 	return nil
 }
 
-func (m *Wrapper) GetIntro() *IntroductionServer {
-	if x, ok := m.GetBody().(*Wrapper_Intro); ok {
+func (m *Packet) GetIntro() *IntroductionPassive {
+	if x, ok := m.GetBody().(*Packet_Intro); ok {
 		return x.Intro
 	}
 	return nil
 }
 
-func (m *Wrapper) GetRouterConfigReq() *RouterConfigurationRequest {
-	if x, ok := m.GetBody().(*Wrapper_RouterConfigReq); ok {
+func (m *Packet) GetRouterConfigReq() *RouterConfigurationRequest {
+	if x, ok := m.GetBody().(*Packet_RouterConfigReq); ok {
 		return x.RouterConfigReq
 	}
 	return nil
 }
 
-func (m *Wrapper) GetRoomConfigReq() *RoomConfigurationRequest {
-	if x, ok := m.GetBody().(*Wrapper_RoomConfigReq); ok {
+func (m *Packet) GetRoomConfigReq() *RoomConfigurationRequest {
+	if x, ok := m.GetBody().(*Packet_RoomConfigReq); ok {
 		return x.RoomConfigReq
 	}
 	return nil
 }
 
-func (m *Wrapper) GetErrorResponse() *GeneralErrorResponse {
-	if x, ok := m.GetBody().(*Wrapper_ErrorResponse); ok {
+func (m *Packet) GetErrorResponse() *GeneralErrorResponse {
+	if x, ok := m.GetBody().(*Packet_ErrorResponse); ok {
 		return x.ErrorResponse
 	}
 	return nil
 }
 
-// XXX_OneofFuncs is for the internal use of the proto package.
-func (*Wrapper) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
-	return _Wrapper_OneofMarshaler, _Wrapper_OneofUnmarshaler, _Wrapper_OneofSizer, []interface{}{
-		(*Wrapper_Intro)(nil),
-		(*Wrapper_RouterConfigReq)(nil),
-		(*Wrapper_RoomConfigReq)(nil),
-		(*Wrapper_ErrorResponse)(nil),
-	}
-}
-
-func _Wrapper_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
-	m := msg.(*Wrapper)
-	// body
-	switch x := m.Body.(type) {
-	case *Wrapper_Intro:
-		b.EncodeVarint(2<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.Intro); err != nil {
-			return err
-		}
-	case *Wrapper_RouterConfigReq:
-		b.EncodeVarint(3<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.RouterConfigReq); err != nil {
-			return err
-		}
-	case *Wrapper_RoomConfigReq:
-		b.EncodeVarint(4<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.RoomConfigReq); err != nil {
-			return err
-		}
-	case *Wrapper_ErrorResponse:
-		b.EncodeVarint(5<<3 | proto.WireBytes)
-		if err := b.EncodeMessage(x.ErrorResponse); err != nil {
-			return err
-		}
-	case nil:
-	default:
-		return fmt.Errorf("Wrapper.Body has unexpected type %T", x)
+func (m *Packet) GetDeviceTransfer() *DeviceTransferPassive {
+	if x, ok := m.GetBody().(*Packet_DeviceTransfer); ok {
+		return x.DeviceTransfer
 	}
 	return nil
 }
 
-func _Wrapper_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
-	m := msg.(*Wrapper)
+func (m *Packet) GetCommand() *Command {
+	if x, ok := m.GetBody().(*Packet_Command); ok {
+		return x.Command
+	}
+	return nil
+}
+
+// XXX_OneofFuncs is for the internal use of the proto package.
+func (*Packet) XXX_OneofFuncs() (func(msg proto.Message, b *proto.Buffer) error, func(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error), func(msg proto.Message) (n int), []interface{}) {
+	return _Packet_OneofMarshaler, _Packet_OneofUnmarshaler, _Packet_OneofSizer, []interface{}{
+		(*Packet_Intro)(nil),
+		(*Packet_RouterConfigReq)(nil),
+		(*Packet_RoomConfigReq)(nil),
+		(*Packet_ErrorResponse)(nil),
+		(*Packet_DeviceTransfer)(nil),
+		(*Packet_Command)(nil),
+	}
+}
+
+func _Packet_OneofMarshaler(msg proto.Message, b *proto.Buffer) error {
+	m := msg.(*Packet)
+	// body
+	switch x := m.Body.(type) {
+	case *Packet_Intro:
+		b.EncodeVarint(2<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Intro); err != nil {
+			return err
+		}
+	case *Packet_RouterConfigReq:
+		b.EncodeVarint(3<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.RouterConfigReq); err != nil {
+			return err
+		}
+	case *Packet_RoomConfigReq:
+		b.EncodeVarint(4<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.RoomConfigReq); err != nil {
+			return err
+		}
+	case *Packet_ErrorResponse:
+		b.EncodeVarint(5<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.ErrorResponse); err != nil {
+			return err
+		}
+	case *Packet_DeviceTransfer:
+		b.EncodeVarint(6<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.DeviceTransfer); err != nil {
+			return err
+		}
+	case *Packet_Command:
+		b.EncodeVarint(99<<3 | proto.WireBytes)
+		if err := b.EncodeMessage(x.Command); err != nil {
+			return err
+		}
+	case nil:
+	default:
+		return fmt.Errorf("Packet.Body has unexpected type %T", x)
+	}
+	return nil
+}
+
+func _Packet_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer) (bool, error) {
+	m := msg.(*Packet)
 	switch tag {
 	case 2: // body.intro
 		if wire != proto.WireBytes {
 			return true, proto.ErrInternalBadWireType
 		}
-		msg := new(IntroductionServer)
+		msg := new(IntroductionPassive)
 		err := b.DecodeMessage(msg)
-		m.Body = &Wrapper_Intro{msg}
+		m.Body = &Packet_Intro{msg}
 		return true, err
 	case 3: // body.routerConfigReq
 		if wire != proto.WireBytes {
@@ -194,7 +210,7 @@ func _Wrapper_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer
 		}
 		msg := new(RouterConfigurationRequest)
 		err := b.DecodeMessage(msg)
-		m.Body = &Wrapper_RouterConfigReq{msg}
+		m.Body = &Packet_RouterConfigReq{msg}
 		return true, err
 	case 4: // body.roomConfigReq
 		if wire != proto.WireBytes {
@@ -202,7 +218,7 @@ func _Wrapper_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer
 		}
 		msg := new(RoomConfigurationRequest)
 		err := b.DecodeMessage(msg)
-		m.Body = &Wrapper_RoomConfigReq{msg}
+		m.Body = &Packet_RoomConfigReq{msg}
 		return true, err
 	case 5: // body.errorResponse
 		if wire != proto.WireBytes {
@@ -210,35 +226,61 @@ func _Wrapper_OneofUnmarshaler(msg proto.Message, tag, wire int, b *proto.Buffer
 		}
 		msg := new(GeneralErrorResponse)
 		err := b.DecodeMessage(msg)
-		m.Body = &Wrapper_ErrorResponse{msg}
+		m.Body = &Packet_ErrorResponse{msg}
+		return true, err
+	case 6: // body.deviceTransfer
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(DeviceTransferPassive)
+		err := b.DecodeMessage(msg)
+		m.Body = &Packet_DeviceTransfer{msg}
+		return true, err
+	case 99: // body.command
+		if wire != proto.WireBytes {
+			return true, proto.ErrInternalBadWireType
+		}
+		msg := new(Command)
+		err := b.DecodeMessage(msg)
+		m.Body = &Packet_Command{msg}
 		return true, err
 	default:
 		return false, nil
 	}
 }
 
-func _Wrapper_OneofSizer(msg proto.Message) (n int) {
-	m := msg.(*Wrapper)
+func _Packet_OneofSizer(msg proto.Message) (n int) {
+	m := msg.(*Packet)
 	// body
 	switch x := m.Body.(type) {
-	case *Wrapper_Intro:
+	case *Packet_Intro:
 		s := proto.Size(x.Intro)
 		n += proto.SizeVarint(2<<3 | proto.WireBytes)
 		n += proto.SizeVarint(uint64(s))
 		n += s
-	case *Wrapper_RouterConfigReq:
+	case *Packet_RouterConfigReq:
 		s := proto.Size(x.RouterConfigReq)
 		n += proto.SizeVarint(3<<3 | proto.WireBytes)
 		n += proto.SizeVarint(uint64(s))
 		n += s
-	case *Wrapper_RoomConfigReq:
+	case *Packet_RoomConfigReq:
 		s := proto.Size(x.RoomConfigReq)
 		n += proto.SizeVarint(4<<3 | proto.WireBytes)
 		n += proto.SizeVarint(uint64(s))
 		n += s
-	case *Wrapper_ErrorResponse:
+	case *Packet_ErrorResponse:
 		s := proto.Size(x.ErrorResponse)
 		n += proto.SizeVarint(5<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Packet_DeviceTransfer:
+		s := proto.Size(x.DeviceTransfer)
+		n += proto.SizeVarint(6<<3 | proto.WireBytes)
+		n += proto.SizeVarint(uint64(s))
+		n += s
+	case *Packet_Command:
+		s := proto.Size(x.Command)
+		n += proto.SizeVarint(99<<3 | proto.WireBytes)
 		n += proto.SizeVarint(uint64(s))
 		n += s
 	case nil:
@@ -251,17 +293,18 @@ func _Wrapper_OneofSizer(msg proto.Message) (n int) {
 // Begin the header information. This is standard information
 // across all packets that is necessary for basic functionality
 // and/or routing.
-type Wrapper_Header struct {
-	Origin      string              `protobuf:"bytes,1,opt,name=origin" json:"origin,omitempty"`
-	Destination string              `protobuf:"bytes,2,opt,name=destination" json:"destination,omitempty"`
-	Id          string              `protobuf:"bytes,3,opt,name=id" json:"id,omitempty"`
-	Type        Wrapper_Header_Type `protobuf:"varint,4,opt,name=type,enum=packets.Wrapper_Header_Type" json:"type,omitempty"`
+type Packet_Header struct {
+	Origin      string             `protobuf:"bytes,1,opt,name=origin" json:"origin,omitempty"`
+	Destination string             `protobuf:"bytes,2,opt,name=destination" json:"destination,omitempty"`
+	Device      string             `protobuf:"bytes,3,opt,name=device" json:"device,omitempty"`
+	Id          string             `protobuf:"bytes,4,opt,name=id" json:"id,omitempty"`
+	Type        Packet_Header_Type `protobuf:"varint,5,opt,name=type,enum=packets.Packet_Header_Type" json:"type,omitempty"`
 }
 
-func (m *Wrapper_Header) Reset()                    { *m = Wrapper_Header{} }
-func (m *Wrapper_Header) String() string            { return proto.CompactTextString(m) }
-func (*Wrapper_Header) ProtoMessage()               {}
-func (*Wrapper_Header) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{0, 0} }
+func (m *Packet_Header) Reset()                    { *m = Packet_Header{} }
+func (m *Packet_Header) String() string            { return proto.CompactTextString(m) }
+func (*Packet_Header) ProtoMessage()               {}
+func (*Packet_Header) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{0, 0} }
 
 type GeneralErrorResponse struct {
 	ErrorMessage string `protobuf:"bytes,1,opt,name=errorMessage" json:"errorMessage,omitempty"`
@@ -270,20 +313,20 @@ type GeneralErrorResponse struct {
 func (m *GeneralErrorResponse) Reset()                    { *m = GeneralErrorResponse{} }
 func (m *GeneralErrorResponse) String() string            { return proto.CompactTextString(m) }
 func (*GeneralErrorResponse) ProtoMessage()               {}
-func (*GeneralErrorResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{1} }
+func (*GeneralErrorResponse) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{1} }
 
-// IntroductionServer is sent immediately upon opening of a socket
+// IntroductionPassive is sent immediately upon opening of a socket
 // from the server to the client. As this is not a request->response
-// packet, it is named Server to indicate the one-sided nature.
+// packet, it is named Passive to indicate the one-sided nature.
 // <br>
-type IntroductionServer struct {
+type IntroductionPassive struct {
 	Setup bool `protobuf:"varint,1,opt,name=setup" json:"setup,omitempty"`
 }
 
-func (m *IntroductionServer) Reset()                    { *m = IntroductionServer{} }
-func (m *IntroductionServer) String() string            { return proto.CompactTextString(m) }
-func (*IntroductionServer) ProtoMessage()               {}
-func (*IntroductionServer) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{2} }
+func (m *IntroductionPassive) Reset()                    { *m = IntroductionPassive{} }
+func (m *IntroductionPassive) String() string            { return proto.CompactTextString(m) }
+func (*IntroductionPassive) ProtoMessage()               {}
+func (*IntroductionPassive) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{2} }
 
 // RouterConfigurationRequest contains the information that needs to be
 // configured on the router before it can function as a router.
@@ -296,15 +339,7 @@ type RouterConfigurationRequest struct {
 func (m *RouterConfigurationRequest) Reset()                    { *m = RouterConfigurationRequest{} }
 func (m *RouterConfigurationRequest) String() string            { return proto.CompactTextString(m) }
 func (*RouterConfigurationRequest) ProtoMessage()               {}
-func (*RouterConfigurationRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{3} }
-
-type RouterConfigurationResponse struct {
-}
-
-func (m *RouterConfigurationResponse) Reset()                    { *m = RouterConfigurationResponse{} }
-func (m *RouterConfigurationResponse) String() string            { return proto.CompactTextString(m) }
-func (*RouterConfigurationResponse) ProtoMessage()               {}
-func (*RouterConfigurationResponse) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{4} }
+func (*RouterConfigurationRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{3} }
 
 // RoomConfigurationRequest contains information to configure and/or
 // customize the room.
@@ -316,49 +351,65 @@ type RoomConfigurationRequest struct {
 func (m *RoomConfigurationRequest) Reset()                    { *m = RoomConfigurationRequest{} }
 func (m *RoomConfigurationRequest) String() string            { return proto.CompactTextString(m) }
 func (*RoomConfigurationRequest) ProtoMessage()               {}
-func (*RoomConfigurationRequest) Descriptor() ([]byte, []int) { return fileDescriptor0, []int{5} }
+func (*RoomConfigurationRequest) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{4} }
 
-func init() {
-	proto.RegisterType((*Wrapper)(nil), "packets.Wrapper")
-	proto.RegisterType((*Wrapper_Header)(nil), "packets.Wrapper.Header")
-	proto.RegisterType((*GeneralErrorResponse)(nil), "packets.GeneralErrorResponse")
-	proto.RegisterType((*IntroductionServer)(nil), "packets.IntroductionServer")
-	proto.RegisterType((*RouterConfigurationRequest)(nil), "packets.RouterConfigurationRequest")
-	proto.RegisterType((*RouterConfigurationResponse)(nil), "packets.RouterConfigurationResponse")
-	proto.RegisterType((*RoomConfigurationRequest)(nil), "packets.RoomConfigurationRequest")
-	proto.RegisterEnum("packets.Wrapper_Header_Type", Wrapper_Header_Type_name, Wrapper_Header_Type_value)
+// DeviceTransferPassive notifies definers and phones that a device
+// has paired with a new definer.
+// <br>
+type DeviceTransferPassive struct {
+	Device string `protobuf:"bytes,1,opt,name=device" json:"device,omitempty"`
 }
 
-func init() { proto.RegisterFile("communication.proto", fileDescriptor0) }
+func (m *DeviceTransferPassive) Reset()                    { *m = DeviceTransferPassive{} }
+func (m *DeviceTransferPassive) String() string            { return proto.CompactTextString(m) }
+func (*DeviceTransferPassive) ProtoMessage()               {}
+func (*DeviceTransferPassive) Descriptor() ([]byte, []int) { return fileDescriptor1, []int{5} }
 
-var fileDescriptor0 = []byte{
-	// 438 bytes of a gzipped FileDescriptorProto
-	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x74, 0x53, 0x51, 0x6f, 0xd3, 0x40,
-	0x0c, 0x6e, 0x4b, 0x9a, 0xb6, 0xee, 0x36, 0x2a, 0x33, 0x41, 0xd4, 0x31, 0x69, 0x84, 0x17, 0x84,
-	0x44, 0x40, 0xdb, 0x1b, 0x8f, 0xa0, 0x88, 0x4e, 0x02, 0x06, 0x97, 0x01, 0xcf, 0x59, 0x63, 0xca,
-	0x09, 0x9a, 0xbb, 0xf9, 0x2e, 0xa0, 0xfe, 0x0b, 0xfe, 0x0b, 0x7f, 0x10, 0xc5, 0xcd, 0x4a, 0xcb,
-	0xda, 0xb7, 0xb3, 0xfd, 0x7d, 0x9f, 0xed, 0xcf, 0x09, 0xdc, 0x9b, 0x9a, 0xf9, 0xbc, 0x2a, 0xf5,
-	0x34, 0xf7, 0xda, 0x94, 0x89, 0x65, 0xe3, 0x0d, 0xf6, 0x6c, 0x3e, 0xfd, 0x4e, 0xde, 0xc5, 0xbf,
-	0x03, 0xe8, 0x7d, 0xe1, 0xdc, 0x5a, 0x62, 0x7c, 0x0e, 0xe1, 0x37, 0xca, 0x0b, 0xe2, 0xa8, 0x7d,
-	0xd2, 0x7e, 0x32, 0x3c, 0x7d, 0x90, 0x34, 0xa8, 0xa4, 0x41, 0x24, 0x13, 0x29, 0xab, 0x06, 0x86,
-	0x67, 0xd0, 0xd5, 0xa5, 0x67, 0x13, 0x75, 0x04, 0x7f, 0xb4, 0xc2, 0x9f, 0xd7, 0xd9, 0xa2, 0x9a,
-	0xd6, 0x1d, 0x33, 0xe2, 0x9f, 0xc4, 0x93, 0x96, 0x5a, 0x62, 0xf1, 0x02, 0xee, 0xb2, 0xa9, 0x3c,
-	0xf1, 0x6b, 0x53, 0x7e, 0xd5, 0x33, 0x45, 0xd7, 0xd1, 0x1d, 0xa1, 0x3f, 0x5e, 0xd1, 0xd5, 0x5a,
-	0xbd, 0x62, 0x99, 0x5b, 0xd1, 0x75, 0x45, 0xce, 0x4f, 0x5a, 0xea, 0x7f, 0x36, 0x9e, 0xc3, 0x3e,
-	0x1b, 0x33, 0xff, 0x27, 0x17, 0x88, 0xdc, 0xa3, 0x35, 0xb9, 0x9b, 0xea, 0x2d, 0xb1, 0x4d, 0x26,
-	0xa6, 0xb0, 0x4f, 0xcc, 0x86, 0x15, 0x39, 0x6b, 0x4a, 0x47, 0x51, 0x57, 0xa4, 0x8e, 0x57, 0x52,
-	0x6f, 0xa8, 0x24, 0xce, 0x7f, 0xa4, 0xeb, 0xa0, 0x5a, 0x66, 0x83, 0x35, 0xfe, 0xd3, 0x86, 0x70,
-	0x69, 0x15, 0xde, 0x87, 0xd0, 0xb0, 0x9e, 0xe9, 0x52, 0x3c, 0x1d, 0xa8, 0x26, 0xc2, 0x13, 0x18,
-	0x16, 0xe4, 0xbc, 0x2e, 0x65, 0x20, 0x31, 0x70, 0xa0, 0xd6, 0x53, 0x78, 0x00, 0x1d, 0x5d, 0x88,
-	0x35, 0x03, 0xd5, 0xd1, 0x05, 0xbe, 0x80, 0xc0, 0x2f, 0x2c, 0xc9, 0x76, 0x07, 0xa7, 0x0f, 0x77,
-	0xdc, 0x26, 0xb9, 0x5c, 0x58, 0x52, 0x82, 0x8c, 0x9f, 0x41, 0x50, 0x47, 0x38, 0x84, 0x9e, 0x4a,
-	0x3f, 0x7e, 0x4a, 0xb3, 0xcb, 0x51, 0x0b, 0xf7, 0xa0, 0xaf, 0xd2, 0xec, 0xc3, 0xc5, 0xfb, 0x2c,
-	0x1d, 0xb5, 0x11, 0x20, 0xcc, 0x52, 0xf5, 0x39, 0x55, 0xa3, 0xce, 0xab, 0x10, 0x82, 0x2b, 0x53,
-	0x2c, 0xe2, 0x97, 0x70, 0xb8, 0x6d, 0x4d, 0x8c, 0x61, 0x4f, 0xd6, 0x7c, 0x47, 0xce, 0xe5, 0x33,
-	0x6a, 0x16, 0xda, 0xc8, 0xc5, 0x4f, 0x01, 0x6f, 0xdf, 0x1e, 0x0f, 0xa1, 0xeb, 0xc8, 0x57, 0x56,
-	0x28, 0x7d, 0xb5, 0x0c, 0xe2, 0xb7, 0x30, 0xde, 0x7d, 0x68, 0x44, 0x08, 0x9c, 0xd3, 0x45, 0xd3,
-	0x45, 0xde, 0x38, 0x86, 0xbe, 0xcd, 0x9d, 0xfb, 0x65, 0xb8, 0x68, 0x1c, 0x5b, 0xc5, 0xf1, 0x31,
-	0x1c, 0x6d, 0x55, 0x5b, 0x0e, 0x1f, 0x27, 0x10, 0xed, 0xfa, 0x0c, 0xea, 0x56, 0x65, 0x3e, 0xbf,
-	0x59, 0x48, 0xde, 0x57, 0xa1, 0xfc, 0x27, 0x67, 0x7f, 0x03, 0x00, 0x00, 0xff, 0xff, 0x94, 0x89,
-	0x66, 0xbe, 0x3e, 0x03, 0x00, 0x00,
+func init() {
+	proto.RegisterType((*Packet)(nil), "packets.Packet")
+	proto.RegisterType((*Packet_Header)(nil), "packets.Packet.Header")
+	proto.RegisterType((*GeneralErrorResponse)(nil), "packets.GeneralErrorResponse")
+	proto.RegisterType((*IntroductionPassive)(nil), "packets.IntroductionPassive")
+	proto.RegisterType((*RouterConfigurationRequest)(nil), "packets.RouterConfigurationRequest")
+	proto.RegisterType((*RoomConfigurationRequest)(nil), "packets.RoomConfigurationRequest")
+	proto.RegisterType((*DeviceTransferPassive)(nil), "packets.DeviceTransferPassive")
+	proto.RegisterEnum("packets.Packet_Header_Type", Packet_Header_Type_name, Packet_Header_Type_value)
+}
+
+func init() { proto.RegisterFile("communication.proto", fileDescriptor1) }
+
+var fileDescriptor1 = []byte{
+	// 502 bytes of a gzipped FileDescriptorProto
+	0x1f, 0x8b, 0x08, 0x00, 0x00, 0x09, 0x6e, 0x88, 0x02, 0xff, 0x74, 0x53, 0x5f, 0x6f, 0xd3, 0x30,
+	0x10, 0x6f, 0x4b, 0x9b, 0xb6, 0xd7, 0xad, 0x54, 0xde, 0x98, 0xa2, 0xf2, 0x47, 0x23, 0xbc, 0x20,
+	0x81, 0x32, 0x69, 0xf0, 0xc4, 0x1b, 0x8c, 0x88, 0x56, 0x02, 0x56, 0xdc, 0xc2, 0xbb, 0x17, 0xdf,
+	0x8a, 0x05, 0xb5, 0x33, 0x3b, 0x19, 0xea, 0xa7, 0xe1, 0x03, 0xf1, 0xa5, 0x50, 0x2e, 0x69, 0x96,
+	0x6e, 0xdd, 0x5b, 0xee, 0x7e, 0x7f, 0x6c, 0xdf, 0xef, 0x02, 0x07, 0xb1, 0x59, 0xad, 0x32, 0xad,
+	0x62, 0x91, 0x2a, 0xa3, 0xc3, 0xc4, 0x9a, 0xd4, 0xb0, 0x6e, 0x22, 0xe2, 0x5f, 0x98, 0xba, 0xf1,
+	0x30, 0x47, 0x85, 0x96, 0xae, 0x00, 0x82, 0xbf, 0x1d, 0xf0, 0x66, 0x84, 0xb1, 0x10, 0xbc, 0x9f,
+	0x28, 0x24, 0x5a, 0xbf, 0x79, 0xdc, 0x7c, 0x39, 0x38, 0x3d, 0x0a, 0x4b, 0x51, 0x58, 0x10, 0xc2,
+	0x09, 0xa1, 0xbc, 0x64, 0xb1, 0xb7, 0xd0, 0x51, 0x3a, 0xb5, 0xc6, 0x6f, 0x11, 0xfd, 0x49, 0x45,
+	0x9f, 0xe6, 0x5d, 0x99, 0xc5, 0xf9, 0xf9, 0x33, 0xe1, 0x9c, 0xba, 0xc6, 0x49, 0x83, 0x17, 0x64,
+	0x76, 0x0e, 0x0f, 0xad, 0xc9, 0x52, 0xb4, 0x67, 0x46, 0x5f, 0xaa, 0x25, 0xc7, 0x2b, 0xff, 0x01,
+	0xe9, 0x5f, 0x54, 0x7a, 0x5e, 0xc3, 0x33, 0x4b, 0xcf, 0xe0, 0x78, 0x95, 0xa1, 0x4b, 0x27, 0x0d,
+	0x7e, 0x5b, 0xcd, 0xa6, 0xb0, 0x6f, 0x8d, 0x59, 0xdd, 0xd8, 0xb5, 0xc9, 0xee, 0x79, 0xcd, 0x6e,
+	0x83, 0xde, 0x31, 0xdb, 0x56, 0xb2, 0x08, 0xf6, 0xd1, 0x5a, 0x63, 0x39, 0xba, 0xc4, 0x68, 0x87,
+	0x7e, 0x87, 0xac, 0x9e, 0x56, 0x56, 0x9f, 0x50, 0xa3, 0x15, 0xbf, 0xa3, 0x3a, 0x29, 0xb7, 0xd9,
+	0x52, 0xb1, 0x09, 0x0c, 0x25, 0x5e, 0xab, 0x18, 0x17, 0x56, 0x68, 0x77, 0x89, 0xd6, 0xf7, 0xc8,
+	0xe7, 0x59, 0xe5, 0xf3, 0x71, 0x0b, 0xbe, 0x99, 0xd1, 0x2d, 0x1d, 0x7b, 0x0d, 0xdd, 0x32, 0x2f,
+	0x3f, 0x26, 0x8b, 0x51, 0x65, 0x71, 0x56, 0xf4, 0x27, 0x0d, 0xbe, 0xa1, 0x8c, 0xff, 0x35, 0xc1,
+	0x2b, 0x32, 0x62, 0x47, 0xe0, 0x19, 0xab, 0x96, 0x4a, 0x53, 0x96, 0x7d, 0x5e, 0x56, 0xec, 0x18,
+	0x06, 0x12, 0x5d, 0xaa, 0x34, 0x0d, 0x82, 0x92, 0xeb, 0xf3, 0x7a, 0x2b, 0x57, 0x16, 0x97, 0xa0,
+	0x58, 0xfa, 0xbc, 0xac, 0xd8, 0x10, 0x5a, 0x4a, 0xd2, 0x6c, 0xfb, 0xbc, 0xa5, 0x24, 0x3b, 0x81,
+	0x76, 0xba, 0x4e, 0x8a, 0x11, 0x0d, 0x4f, 0x1f, 0xef, 0xde, 0x95, 0x70, 0xb1, 0x4e, 0x90, 0x13,
+	0x31, 0x08, 0xa1, 0x9d, 0x57, 0x6c, 0x00, 0x5d, 0x1e, 0x7d, 0xfb, 0x1e, 0xcd, 0x17, 0xa3, 0x06,
+	0xdb, 0x83, 0x1e, 0x8f, 0xe6, 0xb3, 0xf3, 0xaf, 0xf3, 0x68, 0xd4, 0xcc, 0xa1, 0xd9, 0xfb, 0xf9,
+	0x7c, 0xfa, 0x23, 0x1a, 0xb5, 0x3e, 0x78, 0xd0, 0xbe, 0x30, 0x72, 0x1d, 0xbc, 0x83, 0xc3, 0x5d,
+	0x63, 0x67, 0x01, 0xec, 0xd1, 0xd8, 0xbf, 0xa0, 0x73, 0x62, 0x89, 0xe5, 0x43, 0xb7, 0x7a, 0xc1,
+	0x2b, 0x38, 0xd8, 0xb1, 0x8c, 0xec, 0x10, 0x3a, 0x0e, 0xd3, 0x2c, 0x21, 0x4d, 0x8f, 0x17, 0x45,
+	0xf0, 0x19, 0xc6, 0xf7, 0x6f, 0x1e, 0x63, 0xd0, 0x76, 0x4e, 0xc9, 0xf2, 0x18, 0xfa, 0x66, 0x63,
+	0xe8, 0x25, 0xc2, 0xb9, 0x3f, 0xc6, 0xca, 0x72, 0x94, 0x55, 0x1d, 0x84, 0xe0, 0xdf, 0xb7, 0x78,
+	0xb9, 0x97, 0x16, 0xab, 0xcd, 0x95, 0xe9, 0x3b, 0x38, 0x81, 0x47, 0x3b, 0xb7, 0xa2, 0x16, 0x48,
+	0xb3, 0x1e, 0xc8, 0x85, 0x47, 0x3f, 0xf0, 0x9b, 0xff, 0x01, 0x00, 0x00, 0xff, 0xff, 0x0e, 0xe6,
+	0x80, 0x4b, 0xf0, 0x03, 0x00, 0x00,
 }

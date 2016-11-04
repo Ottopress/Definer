@@ -2,17 +2,20 @@
     <router>
         <hostname>monteverde.local</hostname>
         <port>46290</port>
-        <ssid>PrettiestWifi</ssid>
-        <password>abcdefghijklmnopqrstuvwxyz</password>
+        <ssid>NUS-Student</ssid>
+        <password>JupRub8u</password>
         <setup>true</setup>
     </router>
     <room>
-        <name>Plane</name>
+        <name>Cafe</name>
         <setup>true</setup>
         <devices>
-            <device>
+            <device id="">
+                <version></version>
+                <manufacturer></manufacturer>
                 <name>Light</name>
             </device>
         </devices>
+        <routers></routers>
     </room>
 </definer>

@@ -1,7 +1,7 @@
 VERSION=0.1
 BUILD_TIME=$(shell date +%s)
 
-.PHONY: build protos
+.PHONY: protos build
 
 build:
 	go build

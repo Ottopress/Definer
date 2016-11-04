@@ -2,18 +2,20 @@ package main
 
 import (
 	"bufio"
+	"encoding/json"
 	"errors"
 	"os"
 
 	"github.com/golang/protobuf/proto"
 
-	"git.getcoffee.io/ottopress/definer/protos"
+	"github.com/ottopress/definer/protos"
 )
 
 // ConsoleServer repersents a console-based communication system
 type ConsoleServer struct {
 	Handler *Handler
-	Definer *Definer
+	Room    *Room
+	Router  *Router
 }
 
 // ConsoleOut represents a console-based output. This is used
@@ -22,14 +24,12 @@ type ConsoleServer struct {
 type ConsoleOut struct{}
 
 // NewConsoleServer returns a new ConsoleServer
-func NewConsoleServer(definer *Definer) *ConsoleServer {
+func NewConsoleServer(room *Room, router *Router, handler *Handler) *ConsoleServer {
 	console := &ConsoleServer{
-		Definer: definer,
+		Room:    room,
+		Router:  router,
+		Handler: handler,
 	}
-	handler := &Handler{
-		Server: console,
-	}
-	console.Handler = handler
 	return console
 }
 
@@ -44,7 +44,7 @@ func (console *ConsoleServer) Listen() {
 			Error.Println("console: error parsing command: " + packetErr.Error())
 			return
 		}
-		handleErr := console.Handler.Handle(os.Stdout, packet)
+		handleErr := console.Handler.Handle(packet, os.Stdout)
 		if handleErr != nil {
 			Error.Println("console: error handling command: " + handleErr.Error())
 		}
@@ -59,7 +59,7 @@ func (console *ConsoleServer) Listen() {
 }
 
 //
-func (console *ConsoleServer) toProto(args ...string) (*packets.Wrapper, error) {
+func (console *ConsoleServer) toProto(args ...string) (*packets.Packet, error) {
 	if (len(args) % 2) != 1 {
 		return nil, errors.New("console: invalid number of arguments")
 	}
@@ -72,41 +72,43 @@ func (console *ConsoleServer) toProto(args ...string) (*packets.Wrapper, error) 
 		return console.buildIntroductionServer(argMap)
 	case "routerconfig":
 		return console.buildRouterRequest(argMap)
+	case "roomdebug":
+		return nil, console.debugRoom(argMap)
 	}
 	return nil, nil
 }
 
-func (console *ConsoleServer) buildIntroductionServer(args map[string]string) (*packets.Wrapper, error) {
+func (console *ConsoleServer) buildIntroductionServer(args map[string]string) (*packets.Packet, error) {
 	var setup bool
 	if args["setup"] == "true" {
 		setup = true
 	} else {
 		setup = false
 	}
-	return &packets.Wrapper{
-		Header: &packets.Wrapper_Header{
+	return &packets.Packet{
+		Header: &packets.Packet_Header{
 			Origin:      "127.0.0.1",
 			Destination: "127.0.0.1",
 			Id:          "0",
-			Type:        packets.Wrapper_Header_SERVER,
+			Type:        packets.Packet_Header_PASSIVE,
 		},
-		Body: &packets.Wrapper_Intro{
-			Intro: &packets.IntroductionServer{
+		Body: &packets.Packet_Intro{
+			Intro: &packets.IntroductionPassive{
 				Setup: setup,
 			},
 		},
 	}, nil
 }
 
-func (console *ConsoleServer) buildRouterRequest(args map[string]string) (*packets.Wrapper, error) {
-	return &packets.Wrapper{
-		Header: &packets.Wrapper_Header{
+func (console *ConsoleServer) buildRouterRequest(args map[string]string) (*packets.Packet, error) {
+	return &packets.Packet{
+		Header: &packets.Packet_Header{
 			Origin:      "127.0.0.1",
 			Destination: "127.0.0.1",
 			Id:          "0",
-			Type:        packets.Wrapper_Header_REQUEST,
+			Type:        packets.Packet_Header_REQUEST,
 		},
-		Body: &packets.Wrapper_RouterConfigReq{
+		Body: &packets.Packet_RouterConfigReq{
 			RouterConfigReq: &packets.RouterConfigurationRequest{
 				Ssid:     args["ssid"],
 				Password: args["password"],
@@ -115,9 +117,20 @@ func (console *ConsoleServer) buildRouterRequest(args map[string]string) (*packe
 	}, nil
 }
 
-// GetDefiner returns the provided Definer instance
-func (console *ConsoleServer) GetDefiner() *Definer {
-	return console.Definer
+func (console *ConsoleServer) debugRoom(args map[string]string) error {
+	b, _ := json.MarshalIndent(console.Room, "", "  ")
+	Info.Println(string(b))
+	return nil
+}
+
+// GetRoom returns the provided Room instance
+func (console *ConsoleServer) GetRoom() *Room {
+	return console.Room
+}
+
+// GetRouter returns the provided Router instance
+func (console *ConsoleServer) GetRouter() *Router {
+	return console.Router
 }
 
 // GetHandler returns the provided Handler instance
@@ -134,11 +147,11 @@ func (consoleOut *ConsoleOut) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-func (consoleOut *ConsoleOut) parseProto(protoData []byte) (packets.Wrapper, error) {
-	var wrapper packets.Wrapper
-	unmarshErr := proto.Unmarshal(protoData, &wrapper)
+func (consoleOut *ConsoleOut) parseProto(protoData []byte) (packets.Packet, error) {
+	var packet packets.Packet
+	unmarshErr := proto.Unmarshal(protoData, &packet)
 	if unmarshErr != nil {
-		return packets.Wrapper{}, unmarshErr
+		return packets.Packet{}, unmarshErr
 	}
-	return wrapper, nil
+	return packet, nil
 }

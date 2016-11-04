@@ -10,13 +10,14 @@ var (
 // Server represents a communication system of the definer
 type Server interface {
 	Listen()
-	GetDefiner() *Definer
+	GetRoom() *Room
+	GetRouter() *Router
 	GetHandler() *Handler
 }
 
 // InitServers setups up each of the servers and sets up
 // their basic handlers.
-func InitServers(definer *Definer) {
-	ConsoleServ = NewConsoleServer(definer)
-	WifiServ = NewWifiServer(definer)
+func InitServers(room *Room, router *Router, handler *Handler) {
+	ConsoleServ = NewConsoleServer(room, router, handler)
+	WifiServ = NewWifiServer(room, router, handler)
 }

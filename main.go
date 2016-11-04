@@ -36,10 +36,14 @@ var (
 
 	// DefinerPath is the path of the config for the
 	// definer settings.
-	DefinerPath = "./definer.xml"
-	// SelfDefiner is the definer struct representing the
+	definerPath = "./definer.xml"
+	// self is the definer struct representing the
 	// definer.
-	SelfDefiner Definer
+	self Definer
+	// selfRoom is the room of the current Definer
+	selfRoom *Room
+	// selfRouter is the router of the current Definer
+	selfRouter *Router
 	// Environment represents the environment this software
 	// is running under
 	Environment = EnvEmulated
@@ -50,17 +54,20 @@ func main() {
 	Info.Println(OttopressHeader)
 	Info.Println("Ottopress Definer starting...")
 	Info.Println("Initializing Definer...")
-	definer, definerErr := InitDefiner(DefinerPath)
+	definer, definerErr := InitDefiner(definerPath)
 	if definerErr != nil {
 		Error.Println(definerErr.Error())
 		os.Exit(1)
 	}
 	Info.Println("Definer initialized!")
+	selfRouter = definer.Router
+	selfRoom = definer.Room
 	Info.Println("Initializing Cleanup Handler...")
 	InitCleanup(definer)
 	Info.Println("Cleanup Handler initialized!")
 	Info.Println("Initialize Servers...")
-	InitServers(definer)
+	handler := NewHandler(selfRoom, selfRouter)
+	InitServers(selfRoom, selfRouter, handler)
 	go ConsoleServ.Listen()
 	go WifiServ.Listen()
 	Info.Println("Servers initialized!")
@@ -90,7 +97,7 @@ func InitCleanup(definer *Definer) {
 // cleanup ensures that all connections are closed,
 // files are written, etc. before the software restarts
 func cleanup(definer *Definer) {
-	writeErr := definer.WriteDefiner(DefinerPath)
+	writeErr := definer.WriteDefiner(definerPath)
 	if writeErr != nil {
 		Error.Println(writeErr.Error())
 		return

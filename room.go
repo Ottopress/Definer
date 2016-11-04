@@ -5,23 +5,19 @@ import "encoding/xml"
 // Room represents a collection of physical devices
 // and a single "room definer" or router device.
 type Room struct {
-	XMLName xml.Name `xml:"room"`
-	Name    string   `xml:"name"`
-	Setup   bool     `xml:"setup"`
-	Devices []Device `xml:"devices>device"`
-}
-
-// Device represents any non-router physical device
-type Device struct {
-	XMLName xml.Name `xml:"device"`
-	Name    string   `xml:"name"`
+	XMLName    xml.Name           `xml:"room"`
+	Name       string             `xml:"name"`
+	Setup      bool               `xml:"setup"`
+	DeviceList []*Device          `xml:"devices>device"`
+	Routers    []*Router          `xml:"routers>router"`
+	Devices    map[string]*Device `xml:"-"`
 }
 
 // BuildRoom returns an unconfigured room struct
 func BuildRoom() (*Room, error) {
 	return &Room{
-		Setup:   false,
-		Devices: []Device{},
+		Setup:      false,
+		DeviceList: []*Device{},
 	}, nil
 }
 
@@ -39,4 +35,25 @@ func (room *Room) UpdateSetup() {
 		return
 	}
 	room.Setup = true
+}
+
+// UnmarshalXML is overridden for clean initialization of the devices
+// map on the room struct.
+func (room *Room) UnmarshalXML(decoder *xml.Decoder, start xml.StartElement) error {
+	tempRoom := struct {
+		XMLName    xml.Name  `xml:"room"`
+		Name       string    `xml:"name"`
+		Setup      bool      `xml:"setup"`
+		DeviceList []*Device `xml:"devices>device"`
+		Routers    []*Router `xml:"routers>router"`
+	}{}
+	tempDevices := map[string]*Device{}
+	if decodeErr := decoder.DecodeElement(&tempRoom, &start); decodeErr != nil {
+		return decodeErr
+	}
+	for _, device := range tempRoom.DeviceList {
+		tempDevices[device.ID] = device
+	}
+	*room = Room{tempRoom.XMLName, tempRoom.Name, tempRoom.Setup, tempRoom.DeviceList, tempRoom.Routers, tempDevices}
+	return nil
 }

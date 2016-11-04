@@ -6,25 +6,24 @@ import (
 	"net"
 	"strconv"
 
-	"git.getcoffee.io/ottopress/definer/protos"
 	"github.com/golang/protobuf/proto"
+	"github.com/ottopress/definer/protos"
 )
 
 // WifiServer represents a wifi-based communication system
 type WifiServer struct {
 	Handler *Handler
-	Definer *Definer
+	Room    *Room
+	Router  *Router
 }
 
 // NewWifiServer returns a new WifiServer
-func NewWifiServer(definer *Definer) *WifiServer {
+func NewWifiServer(room *Room, router *Router, handler *Handler) *WifiServer {
 	wifiServ := &WifiServer{
-		Definer: definer,
+		Room:    room,
+		Router:  router,
+		Handler: handler,
 	}
-	handler := &Handler{
-		Server: wifiServ,
-	}
-	wifiServ.Handler = handler
 	return wifiServ
 }
 
@@ -52,12 +51,12 @@ func (wifiServ *WifiServer) handleProto(conn net.Conn) {
 		Error.Println("wifiserv: couldn't handle proto:", protoReadErr.Error())
 		return
 	}
-	protoWrapper, protoParseErr := wifiServ.parseProto(protoData)
+	protoPacket, protoParseErr := wifiServ.parseProto(protoData)
 	if protoParseErr != nil {
 		Error.Println("wifiserv: couldn't parse proto:", protoParseErr.Error())
 		return
 	}
-	handlerErr := wifiServ.Handler.Handle(conn, &protoWrapper)
+	handlerErr := wifiServ.Handler.Handle(&protoPacket, conn)
 	if handlerErr != nil {
 		Error.Println("wifiserv: couldn't handle proto:", handlerErr)
 	}
@@ -77,13 +76,13 @@ func (wifiServ *WifiServer) readProto(reader io.Reader) ([]byte, error) {
 	return packetData, nil
 }
 
-func (wifiServ *WifiServer) parseProto(protoData []byte) (packets.Wrapper, error) {
-	var wrapper packets.Wrapper
-	unmarshErr := proto.Unmarshal(protoData, &wrapper)
+func (wifiServ *WifiServer) parseProto(protoData []byte) (packets.Packet, error) {
+	var packet packets.Packet
+	unmarshErr := proto.Unmarshal(protoData, &packet)
 	if unmarshErr != nil {
-		return packets.Wrapper{}, unmarshErr
+		return packets.Packet{}, unmarshErr
 	}
-	return wrapper, nil
+	return packet, nil
 }
 
 // GetHandler returns the server instance's handler
@@ -91,7 +90,12 @@ func (wifiServ *WifiServer) GetHandler() *Handler {
 	return wifiServ.Handler
 }
 
-// GetDefiner returns the server instance's definer
-func (wifiServ *WifiServer) GetDefiner() *Definer {
-	return wifiServ.Definer
+// GetRoom returns the server instance's room
+func (wifiServ *WifiServer) GetRoom() *Room {
+	return wifiServ.Room
+}
+
+// GetRouter returns the server instance's router
+func (wifiServ *WifiServer) GetRouter() *Router {
+	return wifiServ.Router
 }
