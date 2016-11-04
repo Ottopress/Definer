@@ -57,3 +57,21 @@ func (room *Room) UnmarshalXML(decoder *xml.Decoder, start xml.StartElement) err
 	*room = Room{tempRoom.XMLName, tempRoom.Name, tempRoom.Setup, tempRoom.DeviceList, tempRoom.Routers, tempDevices}
 	return nil
 }
+
+// MarshalXML is overridden to ensure that any modifications to the
+// Devices map are carried over to the DeviceList.
+func (room *Room) MarshalXML(encoder *xml.Encoder, start xml.StartElement) error {
+	tempDeviceList := []*Device{}
+	for _, device := range room.Devices {
+		tempDeviceList = append(tempDeviceList, device)
+	}
+	tempRoom := struct {
+		XMLName    xml.Name  `xml:"room"`
+		Name       string    `xml:"name"`
+		Setup      bool      `xml:"setup"`
+		DeviceList []*Device `xml:"devices>device"`
+		Routers    []*Router `xml:"routers>router"`
+	}{room.XMLName, room.Name, room.Setup, tempDeviceList, room.Routers}
+	encoder.EncodeElement(tempRoom, start)
+	return nil
+}
