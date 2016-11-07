@@ -13,25 +13,15 @@ import (
 
 // ConsoleServer repersents a console-based communication system
 type ConsoleServer struct {
-	Handler *Handler
-	Room    *Room
-	Router  *Router
+	handler *Handler
+	room    *Room
+	router  *Router
 }
 
 // ConsoleOut represents a console-based output. This is used
 // instead of Stdin as an intermediary in order to produce
 // human readable output.
 type ConsoleOut struct{}
-
-// NewConsoleServer returns a new ConsoleServer
-func NewConsoleServer(room *Room, router *Router, handler *Handler) *ConsoleServer {
-	console := &ConsoleServer{
-		Room:    room,
-		Router:  router,
-		Handler: handler,
-	}
-	return console
-}
 
 // Listen begins listening for console commands that have been registered
 // in the handlers.
@@ -44,7 +34,7 @@ func (console *ConsoleServer) Listen() {
 			Error.Println("console: error parsing command: " + packetErr.Error())
 			return
 		}
-		handleErr := console.Handler.Handle(packet, os.Stdout)
+		handleErr := console.handler.Handle(packet, os.Stdout)
 		if handleErr != nil {
 			Error.Println("console: error handling command: " + handleErr.Error())
 		}
@@ -118,24 +108,9 @@ func (console *ConsoleServer) buildRouterRequest(args map[string]string) (*packe
 }
 
 func (console *ConsoleServer) debugRoom(args map[string]string) error {
-	b, _ := json.MarshalIndent(console.Room, "", "  ")
+	b, _ := json.MarshalIndent(console.room, "", "  ")
 	Info.Println(string(b))
 	return nil
-}
-
-// GetRoom returns the provided Room instance
-func (console *ConsoleServer) GetRoom() *Room {
-	return console.Room
-}
-
-// GetRouter returns the provided Router instance
-func (console *ConsoleServer) GetRouter() *Router {
-	return console.Router
-}
-
-// GetHandler returns the provided Handler instance
-func (console *ConsoleServer) GetHandler() *Handler {
-	return console.Handler
 }
 
 func (consoleOut *ConsoleOut) Write(p []byte) (int, error) {

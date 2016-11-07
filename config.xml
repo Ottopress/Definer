@@ -1,4 +1,4 @@
-<definer>
+<config>
     <router>
         <hostname>monteverde.local</hostname>
         <port>46290</port>
@@ -9,13 +9,13 @@
     <room>
         <name>Cafe</name>
         <setup>true</setup>
-        <devices>
-            <device id="">
-                <version></version>
-                <manufacturer></manufacturer>
-                <name>Light</name>
-            </device>
-        </devices>
-        <routers></routers>
     </room>
-</definer>
+    <devices>
+        <device id="22FAA7">
+            <version>2</version>
+            <manufacturer>getCoffee() Inc.</manufacturer>
+            <name>Light</name>
+            <type>wifi</type>
+        </device>
+    </devices>
+</config>

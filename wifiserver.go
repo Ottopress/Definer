@@ -12,19 +12,9 @@ import (
 
 // WifiServer represents a wifi-based communication system
 type WifiServer struct {
-	Handler *Handler
-	Room    *Room
-	Router  *Router
-}
-
-// NewWifiServer returns a new WifiServer
-func NewWifiServer(room *Room, router *Router, handler *Handler) *WifiServer {
-	wifiServ := &WifiServer{
-		Room:    room,
-		Router:  router,
-		Handler: handler,
-	}
-	return wifiServ
+	handler *Handler
+	room    *Room
+	router  *Router
 }
 
 // Listen beings listening for incoming protobuf packets and hands them
@@ -56,7 +46,7 @@ func (wifiServ *WifiServer) handleProto(conn net.Conn) {
 		Error.Println("wifiserv: couldn't parse proto:", protoParseErr.Error())
 		return
 	}
-	handlerErr := wifiServ.Handler.Handle(&protoPacket, conn)
+	handlerErr := wifiServ.handler.Handle(&protoPacket, conn)
 	if handlerErr != nil {
 		Error.Println("wifiserv: couldn't handle proto:", handlerErr)
 	}
@@ -83,19 +73,4 @@ func (wifiServ *WifiServer) parseProto(protoData []byte) (packets.Packet, error)
 		return packets.Packet{}, unmarshErr
 	}
 	return packet, nil
-}
-
-// GetHandler returns the server instance's handler
-func (wifiServ *WifiServer) GetHandler() *Handler {
-	return wifiServ.Handler
-}
-
-// GetRoom returns the server instance's room
-func (wifiServ *WifiServer) GetRoom() *Room {
-	return wifiServ.Room
-}
-
-// GetRouter returns the server instance's router
-func (wifiServ *WifiServer) GetRouter() *Router {
-	return wifiServ.Router
 }

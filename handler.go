@@ -13,16 +13,10 @@ import (
 
 // Handler handles the different protobuf messages
 type Handler struct {
-	room   *Room
-	router *Router
-}
-
-// NewHandler returns a new instance of a Handler
-func NewHandler(room *Room, router *Router) *Handler {
-	return &Handler{
-		room:   room,
-		router: router,
-	}
+	room            *Room
+	router          *Router
+	deviceContainer *DeviceContainer
+	routerContainer *RouterContainer
 }
 
 // Handle checks the type of packet received and routes it to
@@ -186,8 +180,8 @@ func (handler *Handler) HandleDeviceTransferPassive(packet *packets.Packet, writ
 	if body.Device == "" {
 		return errors.New("handler: invalid device transfer packet; must include valid device name")
 	}
-	delete(handler.room.Devices, body.Device)
-	for _, router := range handler.room.Routers {
+	delete(handler.deviceContainer.Devices, body.Device)
+	for _, router := range handler.routerContainer.Routers {
 		sendErr := handler.WriteProtoToDest(router.Hostname, router.Port, &packets.Packet{
 			Header: &packets.Packet_Header{
 				Origin:      handler.router.Hostname,

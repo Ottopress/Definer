@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/signal"
 	"syscall"
+	"time"
 )
 
 const (
@@ -34,70 +35,78 @@ var (
 	// errorOut redirects error logs to os.Stderr
 	errorOut = os.Stderr
 
-	// DefinerPath is the path of the config for the
-	// definer settings.
-	definerPath = "./definer.xml"
-	// self is the definer struct representing the
-	// definer.
-	self Definer
-	// selfRoom is the room of the current Definer
-	selfRoom *Room
-	// selfRouter is the router of the current Definer
-	selfRouter *Router
+	// configPath is the path of the config file
+	configPath = "./config.xml"
+	// config is the initialized config struct
+	config *Config
+	// room is the room of the current Definer
+	room *Room
+	// router is the router of the current Definer
+	router *Router
+	// deviceContainer contains the devices the
+	// current definer controls
+	deviceContainer *DeviceContainer
+	// routerContainer contains the routers the
+	// current definer can access
+	routerContainer *RouterContainer
 	// Environment represents the environment this software
 	// is running under
 	Environment = EnvEmulated
 )
 
 func main() {
+	start := time.Now()
 	InitLog(debugOut, infoOut, warningOut, errorOut)
 	Info.Println(OttopressHeader)
-	Info.Println("Ottopress Definer starting...")
-	Info.Println("Initializing Definer...")
-	definer, definerErr := InitDefiner(definerPath)
-	if definerErr != nil {
-		Error.Println(definerErr.Error())
+	Info.Println("Definer starting...")
+	Info.Println("Loading Config...")
+	config, configErr := InitConfig(configPath)
+	if configErr != nil {
+		Error.Println(configErr.Error())
 		os.Exit(1)
 	}
-	Info.Println("Definer initialized!")
-	selfRouter = definer.Router
-	selfRoom = definer.Room
+	Info.Println("Config loaded!")
+	router = config.Router
+	room = config.Room
+	deviceContainer = config.DeviceContainer
+	routerContainer = config.RouterContainer
 	Info.Println("Initializing Cleanup Handler...")
-	InitCleanup(definer)
+	InitCleanup(config)
 	Info.Println("Cleanup Handler initialized!")
 	Info.Println("Initialize Servers...")
-	handler := NewHandler(selfRoom, selfRouter)
-	InitServers(selfRoom, selfRouter, handler)
+	handler := &Handler{room, router, deviceContainer, routerContainer}
+	InitServers(room, router, handler)
 	go ConsoleServ.Listen()
 	go WifiServ.Listen()
 	Info.Println("Servers initialized!")
 	Info.Println("Initializing Router...")
-	routerInitErr := definer.Router.Initialize()
+	routerInitErr := config.Router.Initialize()
 	if routerInitErr != nil {
 		Error.Println(routerInitErr)
 	}
 	Info.Println("Router initialized!")
-	Info.Println("Waiting...")
+	elapsed := time.Since(start).Seconds()
+	Info.Printf("Done! [took %.3f seconds]...", elapsed)
 	for {
 	}
 }
 
 // InitCleanup initializes the cleanup handler
-func InitCleanup(definer *Definer) {
+func InitCleanup(config *Config) {
 	chanInterrupt := make(chan os.Signal, 1)
 	signal.Notify(chanInterrupt, os.Interrupt)
 	signal.Notify(chanInterrupt, syscall.SIGTERM)
 	go func() {
 		<-chanInterrupt
-		cleanup(definer)
+		cleanup(config)
 		os.Exit(1)
 	}()
 }
 
 // cleanup ensures that all connections are closed,
 // files are written, etc. before the software restarts
-func cleanup(definer *Definer) {
-	writeErr := definer.WriteDefiner(definerPath)
+func cleanup(config *Config) {
+	writeErr := config.WriteConfig(configPath)
 	if writeErr != nil {
 		Error.Println(writeErr.Error())
 		return
