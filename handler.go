@@ -28,6 +28,9 @@ func (handler *Handler) Handle(proto *packets.Packet, writer io.Writer) error {
 	if seenPackets[proto.GetHeader().Id] {
 		return errors.New("handler: already received packet #" + proto.GetHeader().Id)
 	}
+	if proto.GetHeader().Destination != "" && proto.GetHeader().Destination != handler.router.Hostname {
+		return handler.BroadcastProto(proto)
+	}
 	if handler.router.IsSetup() {
 		switch proto.GetBody().(type) {
 		case *packets.Packet_Intro:
@@ -51,6 +54,19 @@ func (handler *Handler) Handle(proto *packets.Packet, writer io.Writer) error {
 			return errors.New("handler: must configure router before sending additional packets")
 		}
 	}
+}
+
+// BroadcastProto resends the provided packet to
+// all other known routers
+func (handler *Handler) BroadcastProto(packet *packets.Packet) error {
+	packet.GetHeader().Route = append(packet.GetHeader().Route, handler.router.Hostname)
+	for _, router := range handler.routerManager.Routers {
+		writeErr := handler.WriteProtoToDest(router.Hostname, router.Port, packet)
+		if writeErr != nil {
+			return writeErr
+		}
+	}
+	return nil
 }
 
 // WriteProto marshals and writes the provided packet
@@ -99,15 +115,6 @@ func (handler *Handler) preparePacket(packet *packets.Packet) ([]byte, error) {
 	return protoFinal, nil
 }
 
-// SendPacket writes the provided packet to the provided io.Writer
-func (handler *Handler) SendPacket(packet *packets.Packet, writer io.Writer) error {
-	writerErr := handler.WriteProto(packet, writer)
-	if writerErr != nil {
-		return writerErr
-	}
-	return nil
-}
-
 // BuildResponseHeader builds a header in response to a
 // received packet.
 func (handler *Handler) BuildResponseHeader(request *packets.Packet) *packets.Packet_Header {
@@ -122,7 +129,7 @@ func (handler *Handler) BuildResponseHeader(request *packets.Packet) *packets.Pa
 // SendResponseError packages up the error into a GeneralErrorResponse
 // packet and sends it in response to a received packet.
 func (handler *Handler) SendResponseError(err error, packet *packets.Packet, writer io.Writer) error {
-	return handler.SendPacket(&packets.Packet{
+	return handler.WriteProto(&packets.Packet{
 		Header: handler.BuildResponseHeader(packet),
 		Body: &packets.Packet_ErrorResponse{
 			ErrorResponse: &packets.GeneralErrorResponse{
@@ -190,26 +197,12 @@ func (handler *Handler) HandleDeviceTransferPassive(packet *packets.Packet, writ
 	if device := handler.deviceManager.GetDeviceByID(body.Device); device != nil {
 		delete(handler.deviceManager.Devices, device.Type)
 	}
-	for _, router := range handler.routerManager.Routers {
-		sendErr := handler.WriteProtoToDest(router.Hostname, router.Port, &packets.Packet{
-			Header: &packets.Packet_Header{
-				Origin:      handler.router.Hostname,
-				Destination: router.Hostname,
-				Id:          packet.GetHeader().Id,
-				Type:        packets.Packet_Header_PASSIVE,
-			},
-			Body: &packets.Packet_DeviceTransfer{
-				DeviceTransfer: body,
-			},
-		})
-		if sendErr != nil {
-			return sendErr
-		}
-	}
-	return nil
+	return handler.BroadcastProto(packet)
 }
 
 // HandleCommand routes the incoming command to its respective handler
+//
+// TODO: Synchronize execution for multi-target commands
 func (handler *Handler) HandleCommand(packet *packets.Packet, writer io.Writer) error {
 	protoDevice := packet.GetCommand().GetDevice()
 	deviceType := &DeviceType{Core: protoDevice.Core, Modifier: protoDevice.Modifier}
@@ -223,12 +216,6 @@ func (handler *Handler) HandleCommand(packet *packets.Packet, writer io.Writer) 
 		}
 		Debug.Println(data)
 		return device.SendData(data)
-	}
-	for _, router := range handler.routerManager.Routers {
-		sendErr := handler.WriteProtoToDest(router.Hostname, router.Port, packet)
-		if sendErr != nil {
-			return sendErr
-		}
 	}
 	return nil
 }
