@@ -25,9 +25,6 @@ var seenPackets map[string]bool
 // Handle checks the type of packet received and routes it to
 // the appropriate hadler method.
 func (handler *Handler) Handle(proto *packets.Packet, writer io.Writer) error {
-	if proto == nil {
-		return nil
-	}
 	if seenPackets[proto.GetHeader().Id] {
 		return errors.New("handler: already received packet #" + proto.GetHeader().Id)
 	}
@@ -190,7 +187,9 @@ func (handler *Handler) HandleDeviceTransferPassive(packet *packets.Packet, writ
 	if body.Device == "" {
 		return errors.New("handler: invalid device transfer packet; must include valid device name")
 	}
-	delete(handler.deviceManager.Devices, body.Device)
+	if device := handler.deviceManager.GetDeviceByID(body.Device); device != nil {
+		delete(handler.deviceManager.Devices, device.Type)
+	}
 	for _, router := range handler.routerManager.Routers {
 		sendErr := handler.WriteProtoToDest(router.Hostname, router.Port, &packets.Packet{
 			Header: &packets.Packet_Header{
@@ -212,7 +211,9 @@ func (handler *Handler) HandleDeviceTransferPassive(packet *packets.Packet, writ
 
 // HandleCommand routes the incoming command to its respective handler
 func (handler *Handler) HandleCommand(packet *packets.Packet, writer io.Writer) error {
-	if device, ok := handler.deviceManager.Devices[packet.GetHeader().Device]; ok {
+	protoDevice := packet.GetCommand().GetDevice()
+	deviceType := &DeviceType{Core: protoDevice.Core, Modifier: protoDevice.Modifier}
+	if device, ok := handler.deviceManager.Devices[deviceType]; ok {
 		Info.Println(packet)
 		b, _ := json.MarshalIndent(packet, "", "	")
 		Info.Println(string(b))

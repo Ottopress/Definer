@@ -35,6 +35,9 @@ func (console *ConsoleServer) Listen() {
 			Error.Println("console: error parsing command: " + packetErr.Error())
 			return
 		}
+		if packet == nil {
+			continue
+		}
 		handleErr := console.handler.Handle(packet, os.Stdout)
 		if handleErr != nil {
 			Error.Println("console: error handling command: " + handleErr.Error())
@@ -116,6 +119,10 @@ func (console *ConsoleServer) buildCommand(args map[string]string) (*packets.Pac
 	switch args["type"] {
 	case "execute":
 		command = &packets.Command{
+			Device: &packets.Command_Device{
+				Core:     args["devcore"],
+				Modifier: args["devmod"],
+			},
 			Body: &packets.Command_Execute{
 				Execute: &packets.Execute{
 					Core:       args["core"],
@@ -129,7 +136,6 @@ func (console *ConsoleServer) buildCommand(args map[string]string) (*packets.Pac
 			Origin:      "127.0.0.1",
 			Destination: "127.0.0.1",
 			Id:          args["id"],
-			Device:      args["device"],
 			Type:        packets.Packet_Header_REQUEST,
 		},
 		Body: &packets.Packet_Command{
