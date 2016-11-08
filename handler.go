@@ -2,6 +2,7 @@ package main
 
 import (
 	"encoding/binary"
+	"encoding/json"
 	"errors"
 	"io"
 	"net"
@@ -13,15 +14,23 @@ import (
 
 // Handler handles the different protobuf messages
 type Handler struct {
-	room            *Room
-	router          *Router
-	deviceContainer *DeviceContainer
-	routerContainer *RouterContainer
+	room          *Room
+	router        *Router
+	deviceManager *DeviceManager
+	routerManager *RouterManager
 }
+
+var seenPackets map[string]bool
 
 // Handle checks the type of packet received and routes it to
 // the appropriate hadler method.
 func (handler *Handler) Handle(proto *packets.Packet, writer io.Writer) error {
+	if proto == nil {
+		return nil
+	}
+	if seenPackets[proto.GetHeader().Id] {
+		return errors.New("handler: already received packet #" + proto.GetHeader().Id)
+	}
 	if handler.router.IsSetup() {
 		switch proto.GetBody().(type) {
 		case *packets.Packet_Intro:
@@ -32,6 +41,8 @@ func (handler *Handler) Handle(proto *packets.Packet, writer io.Writer) error {
 			return handler.HandleRoomConfigurationRequest(proto, writer)
 		case *packets.Packet_DeviceTransfer:
 			return handler.HandleDeviceTransferPassive(proto, writer)
+		case *packets.Packet_Command:
+			return handler.HandleCommand(proto, writer)
 		default:
 			return errors.New("handler: unrecognized packet: " + proto.String())
 		}
@@ -81,16 +92,14 @@ func (handler *Handler) WriteProtoToDest(dest string, port int, packet *packets.
 // appends the length of the proto packet in little endian
 // to ensure proper decoding
 func (handler *Handler) preparePacket(packet *packets.Packet) ([]byte, error) {
-	protoData := []byte{}
-	protoMarsh, protoErr := proto.Marshal(packet)
+	protoData, protoErr := proto.Marshal(packet)
 	if protoErr != nil {
 		return protoData, protoErr
 	}
 	protoLen := make([]byte, 2)
-	binary.LittleEndian.PutUint16(protoLen, uint16(len(protoData)))
-	protoData = append(protoData, protoLen...)
-	protoData = append(protoData, protoMarsh...)
-	return protoData, nil
+	binary.BigEndian.PutUint16(protoLen, uint16(len(protoData)))
+	protoFinal := append(protoLen, protoData...)
+	return protoFinal, nil
 }
 
 // SendPacket writes the provided packet to the provided io.Writer
@@ -106,7 +115,7 @@ func (handler *Handler) SendPacket(packet *packets.Packet, writer io.Writer) err
 // received packet.
 func (handler *Handler) BuildResponseHeader(request *packets.Packet) *packets.Packet_Header {
 	return &packets.Packet_Header{
-		Origin:      "bluebottle.local",
+		Origin:      handler.router.Hostname,
 		Destination: request.GetHeader().Origin,
 		Id:          request.GetHeader().Id,
 		Type:        packets.Packet_Header_RESPONSE,
@@ -172,7 +181,8 @@ func (handler *Handler) HandleRoomConfigurationRequest(packet *packets.Packet, w
 	return nil
 }
 
-// HandleDeviceTransferPassive updates the room
+// HandleDeviceTransferPassive deletes the device if the device manager has it
+// and forwards the packet onto every router known.
 func (handler *Handler) HandleDeviceTransferPassive(packet *packets.Packet, writer io.Writer) error {
 	var body *packets.DeviceTransferPassive
 	body = packet.GetDeviceTransfer()
@@ -180,8 +190,8 @@ func (handler *Handler) HandleDeviceTransferPassive(packet *packets.Packet, writ
 	if body.Device == "" {
 		return errors.New("handler: invalid device transfer packet; must include valid device name")
 	}
-	delete(handler.deviceContainer.Devices, body.Device)
-	for _, router := range handler.routerContainer.Routers {
+	delete(handler.deviceManager.Devices, body.Device)
+	for _, router := range handler.routerManager.Routers {
 		sendErr := handler.WriteProtoToDest(router.Hostname, router.Port, &packets.Packet{
 			Header: &packets.Packet_Header{
 				Origin:      handler.router.Hostname,
@@ -200,4 +210,24 @@ func (handler *Handler) HandleDeviceTransferPassive(packet *packets.Packet, writ
 	return nil
 }
 
-// HandleCommandTransferP
+// HandleCommand routes the incoming command to its respective handler
+func (handler *Handler) HandleCommand(packet *packets.Packet, writer io.Writer) error {
+	if device, ok := handler.deviceManager.Devices[packet.GetHeader().Device]; ok {
+		Info.Println(packet)
+		b, _ := json.MarshalIndent(packet, "", "	")
+		Info.Println(string(b))
+		data, prepErr := handler.preparePacket(packet)
+		if prepErr != nil {
+			return prepErr
+		}
+		Debug.Println(data)
+		return device.SendData(data)
+	}
+	for _, router := range handler.routerManager.Routers {
+		sendErr := handler.WriteProtoToDest(router.Hostname, router.Port, packet)
+		if sendErr != nil {
+			return sendErr
+		}
+	}
+	return nil
+}

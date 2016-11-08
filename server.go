@@ -14,7 +14,7 @@ type Server interface {
 
 // InitServers setups up each of the servers and sets up
 // their basic handlers.
-func InitServers(room *Room, router *Router, handler *Handler) {
-	ConsoleServ = &ConsoleServer{room: room, router: router, handler: handler}
-	WifiServ = &WifiServer{room: room, router: router, handler: handler}
+func InitServers(room *Room, router *Router, handler *Handler, deviceManager *DeviceManager) {
+	ConsoleServ = &ConsoleServer{handler: handler, room: room, router: router, deviceManager: deviceManager}
+	WifiServ = &WifiServer{handler: handler, room: room, router: router}
 }

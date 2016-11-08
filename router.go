@@ -15,9 +15,9 @@ var (
 	DefaultPort = 13789
 )
 
-// RouterContainer manages the other definers the
+// RouterManager manages the other definers the
 // current device can connect to
-type RouterContainer struct {
+type RouterManager struct {
 	XMLName xml.Name `xml:"routers"`
 	Routers map[string]*Router
 }
@@ -138,7 +138,7 @@ func (router *Router) Connect() error {
 
 // UnmarshalXML is overridden for clean initialization
 //of the routers map on the router container struct.
-func (container *RouterContainer) UnmarshalXML(decoder *xml.Decoder, start xml.StartElement) error {
+func (container *RouterManager) UnmarshalXML(decoder *xml.Decoder, start xml.StartElement) error {
 	tempContainer := struct {
 		XMLName xml.Name  `xml:"routers"`
 		Routers []*Router `xml:"router"`
@@ -150,13 +150,13 @@ func (container *RouterContainer) UnmarshalXML(decoder *xml.Decoder, start xml.S
 	for _, router := range tempContainer.Routers {
 		tempRouters[router.Hostname] = router
 	}
-	*container = RouterContainer{tempContainer.XMLName, tempRouters}
+	*container = RouterManager{tempContainer.XMLName, tempRouters}
 	return nil
 }
 
 // MarshalXML is overridden to ensure that the Routers map
 // is saved properly
-func (container *RouterContainer) MarshalXML(encoder *xml.Encoder, start xml.StartElement) error {
+func (container *RouterManager) MarshalXML(encoder *xml.Encoder, start xml.StartElement) error {
 	tempRouterList := []*Router{}
 	for _, router := range container.Routers {
 		tempRouterList = append(tempRouterList, router)

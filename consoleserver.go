@@ -13,9 +13,10 @@ import (
 
 // ConsoleServer repersents a console-based communication system
 type ConsoleServer struct {
-	handler *Handler
-	room    *Room
-	router  *Router
+	handler       *Handler
+	room          *Room
+	router        *Router
+	deviceManager *DeviceManager
 }
 
 // ConsoleOut represents a console-based output. This is used
@@ -48,7 +49,6 @@ func (console *ConsoleServer) Listen() {
 	return
 }
 
-//
 func (console *ConsoleServer) toProto(args ...string) (*packets.Packet, error) {
 	if (len(args) % 2) != 1 {
 		return nil, errors.New("console: invalid number of arguments")
@@ -62,8 +62,12 @@ func (console *ConsoleServer) toProto(args ...string) (*packets.Packet, error) {
 		return console.buildIntroductionServer(argMap)
 	case "routerconfig":
 		return console.buildRouterRequest(argMap)
-	case "roomdebug":
-		return nil, console.debugRoom(argMap)
+	case "command":
+		return console.buildCommand(argMap)
+	case "room":
+		return nil, console.roomCommand(argMap)
+	case "devices":
+		return nil, console.deviceCommand(argMap)
 	}
 	return nil, nil
 }
@@ -107,9 +111,46 @@ func (console *ConsoleServer) buildRouterRequest(args map[string]string) (*packe
 	}, nil
 }
 
-func (console *ConsoleServer) debugRoom(args map[string]string) error {
-	b, _ := json.MarshalIndent(console.room, "", "  ")
-	Info.Println(string(b))
+func (console *ConsoleServer) buildCommand(args map[string]string) (*packets.Packet, error) {
+	var command *packets.Command
+	switch args["type"] {
+	case "execute":
+		command = &packets.Command{
+			Body: &packets.Command_Execute{
+				Execute: &packets.Execute{
+					Core:       args["core"],
+					Parameters: []string{args["parameter"]},
+				},
+			},
+		}
+	}
+	return &packets.Packet{
+		Header: &packets.Packet_Header{
+			Origin:      "127.0.0.1",
+			Destination: "127.0.0.1",
+			Id:          args["id"],
+			Device:      args["device"],
+			Type:        packets.Packet_Header_REQUEST,
+		},
+		Body: &packets.Packet_Command{
+			Command: command,
+		},
+	}, nil
+}
+
+func (console *ConsoleServer) roomCommand(args map[string]string) error {
+	if args["debug"] == "true" {
+		b, _ := json.MarshalIndent(console.room, "", "  ")
+		Info.Println(string(b))
+	}
+	return nil
+}
+
+func (console *ConsoleServer) deviceCommand(args map[string]string) error {
+	if args["list"] == "true" {
+		b, _ := json.MarshalIndent(console.deviceManager.Devices, "", "  ")
+		Info.Println(string(b))
+	}
 	return nil
 }
 

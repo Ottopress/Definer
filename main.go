@@ -43,12 +43,12 @@ var (
 	room *Room
 	// router is the router of the current Definer
 	router *Router
-	// deviceContainer contains the devices the
+	// deviceManager contains the devices the
 	// current definer controls
-	deviceContainer *DeviceContainer
-	// routerContainer contains the routers the
+	deviceManager *DeviceManager
+	// routerManager contains the routers the
 	// current definer can access
-	routerContainer *RouterContainer
+	routerManager *RouterManager
 	// Environment represents the environment this software
 	// is running under
 	Environment = EnvEmulated
@@ -68,14 +68,14 @@ func main() {
 	Info.Println("Config loaded!")
 	router = config.Router
 	room = config.Room
-	deviceContainer = config.DeviceContainer
-	routerContainer = config.RouterContainer
+	deviceManager = config.DeviceManager
+	routerManager = config.RouterManager
 	Info.Println("Initializing Cleanup Handler...")
 	InitCleanup(config)
 	Info.Println("Cleanup Handler initialized!")
 	Info.Println("Initialize Servers...")
-	handler := &Handler{room, router, deviceContainer, routerContainer}
-	InitServers(room, router, handler)
+	handler := &Handler{room, router, deviceManager, routerManager}
+	InitServers(room, router, handler, deviceManager)
 	go ConsoleServ.Listen()
 	go WifiServ.Listen()
 	Info.Println("Servers initialized!")

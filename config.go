@@ -8,11 +8,11 @@ import (
 
 // Config is the configuration of the current device
 type Config struct {
-	XMLName         xml.Name         `xml:"config"`
-	Router          *Router          `xml:"router"`
-	Room            *Room            `xml:"room"`
-	DeviceContainer *DeviceContainer `xml:"devices"`
-	RouterContainer *RouterContainer `xml:"routers"`
+	XMLName       xml.Name       `xml:"config"`
+	Router        *Router        `xml:"router"`
+	Room          *Room          `xml:"room"`
+	DeviceManager *DeviceManager `xml:"devices"`
+	RouterManager *RouterManager `xml:"routers"`
 }
 
 // InitConfig returns either an unmarshalled Config struct

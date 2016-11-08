@@ -3,7 +3,7 @@
         <hostname>monteverde.local</hostname>
         <port>46290</port>
         <ssid>NUS-Student</ssid>
-        <password>JupRub8u</password>
+        <password></password>
         <setup>true</setup>
     </router>
     <room>
@@ -16,6 +16,8 @@
             <manufacturer>getCoffee() Inc.</manufacturer>
             <name>Light</name>
             <type>wifi</type>
+            <address>localhost</address>
+            <port>9726</port>
         </device>
     </devices>
 </config>
