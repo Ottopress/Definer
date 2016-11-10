@@ -1,6 +1,6 @@
 <config>
     <router>
-        <hostname>monteverde.local</hostname>
+        <hostname>bluebottle.local</hostname>
         <port>46290</port>
         <ssid>NUS-Student</ssid>
         <password></password>
@@ -14,8 +14,11 @@
         <device id="22FAA7">
             <version>2</version>
             <manufacturer>getCoffee() Inc.</manufacturer>
-            <name>Light</name>
-            <type>wifi</type>
+            <type>
+                <core>mac</core>
+                <modifier>bluebottle</modifier>
+            </type>
+            <stack>wifi</stack>
             <address>localhost</address>
             <port>9726</port>
         </device>

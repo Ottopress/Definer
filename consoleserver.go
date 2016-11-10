@@ -3,6 +3,7 @@ package main
 import (
 	"bufio"
 	"encoding/json"
+	"encoding/xml"
 	"errors"
 	"os"
 
@@ -38,6 +39,8 @@ func (console *ConsoleServer) Listen() {
 		if packet == nil {
 			continue
 		}
+		b, _ := json.MarshalIndent(packet, "", "	")
+		Debug.Println(string(b))
 		handleErr := console.handler.Handle(packet, os.Stdout)
 		if handleErr != nil {
 			Error.Println("console: error handling command: " + handleErr.Error())
@@ -84,8 +87,8 @@ func (console *ConsoleServer) buildIntroductionServer(args map[string]string) (*
 	}
 	return &packets.Packet{
 		Header: &packets.Packet_Header{
-			Origin:      "127.0.0.1",
-			Destination: "127.0.0.1",
+			Origin:      console.router.Hostname,
+			Destination: console.router.Hostname,
 			Id:          "0",
 			Type:        packets.Packet_Header_PASSIVE,
 		},
@@ -100,8 +103,8 @@ func (console *ConsoleServer) buildIntroductionServer(args map[string]string) (*
 func (console *ConsoleServer) buildRouterRequest(args map[string]string) (*packets.Packet, error) {
 	return &packets.Packet{
 		Header: &packets.Packet_Header{
-			Origin:      "127.0.0.1",
-			Destination: "127.0.0.1",
+			Origin:      console.router.Hostname,
+			Destination: console.router.Hostname,
 			Id:          "0",
 			Type:        packets.Packet_Header_REQUEST,
 		},
@@ -133,8 +136,8 @@ func (console *ConsoleServer) buildCommand(args map[string]string) (*packets.Pac
 	}
 	return &packets.Packet{
 		Header: &packets.Packet_Header{
-			Origin:      "127.0.0.1",
-			Destination: "127.0.0.1",
+			Origin:      console.router.Hostname,
+			Destination: console.router.Hostname,
 			Id:          args["id"],
 			Type:        packets.Packet_Header_REQUEST,
 		},
@@ -146,7 +149,7 @@ func (console *ConsoleServer) buildCommand(args map[string]string) (*packets.Pac
 
 func (console *ConsoleServer) roomCommand(args map[string]string) error {
 	if args["debug"] == "true" {
-		b, _ := json.MarshalIndent(console.room, "", "  ")
+		b, _ := xml.MarshalIndent(console.room, "", "  ")
 		Info.Println(string(b))
 	}
 	return nil
@@ -154,7 +157,7 @@ func (console *ConsoleServer) roomCommand(args map[string]string) error {
 
 func (console *ConsoleServer) deviceCommand(args map[string]string) error {
 	if args["list"] == "true" {
-		b, _ := json.MarshalIndent(console.deviceManager.Devices, "", "  ")
+		b, _ := xml.MarshalIndent(console.deviceManager, "", "    ")
 		Info.Println(string(b))
 	}
 	return nil

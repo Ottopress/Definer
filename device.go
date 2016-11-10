@@ -42,7 +42,7 @@ type DeviceType struct {
 func (manager *DeviceManager) GetDevices(target *DeviceType) []*Device {
 	devices := []*Device{}
 	for deviceType, device := range manager.Devices {
-		if deviceType.Core == target.Core && (target.Modifier != "" && deviceType.Modifier == target.Modifier) {
+		if deviceType.Core == target.Core && (target.Modifier == "" || deviceType.Modifier == target.Modifier) {
 			devices = append(devices, device)
 		}
 	}

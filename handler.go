@@ -2,7 +2,6 @@ package main
 
 import (
 	"encoding/binary"
-	"encoding/json"
 	"errors"
 	"io"
 	"net"
@@ -206,16 +205,9 @@ func (handler *Handler) HandleDeviceTransferPassive(packet *packets.Packet, writ
 func (handler *Handler) HandleCommand(packet *packets.Packet, writer io.Writer) error {
 	protoDevice := packet.GetCommand().GetDevice()
 	deviceType := &DeviceType{Core: protoDevice.Core, Modifier: protoDevice.Modifier}
-	if device, ok := handler.deviceManager.Devices[deviceType]; ok {
-		Info.Println(packet)
-		b, _ := json.MarshalIndent(packet, "", "	")
-		Info.Println(string(b))
-		data, prepErr := handler.preparePacket(packet)
-		if prepErr != nil {
-			return prepErr
-		}
-		Debug.Println(data)
-		return device.SendData(data)
+	data, prepErr := handler.preparePacket(packet)
+	if prepErr != nil {
+		return prepErr
 	}
-	return nil
+	return handler.deviceManager.SendData(deviceType, data)
 }
