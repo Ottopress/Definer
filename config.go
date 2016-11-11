@@ -10,7 +10,6 @@ import (
 type Config struct {
 	XMLName       xml.Name       `xml:"config"`
 	Router        *Router        `xml:"router"`
-	Room          *Room          `xml:"room"`
 	DeviceManager *DeviceManager `xml:"devices"`
 	RouterManager *RouterManager `xml:"routers"`
 }
@@ -45,13 +44,10 @@ func BuildConfig() (*Config, error) {
 	if routerErr != nil {
 		return nil, routerErr
 	}
-	room, roomErr := BuildRoom()
-	if roomErr != nil {
-		return nil, roomErr
-	}
 	config := &Config{
-		Router: router,
-		Room:   room,
+		Router:        router,
+		DeviceManager: &DeviceManager{},
+		RouterManager: &RouterManager{},
 	}
 	return config, nil
 }

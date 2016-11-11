@@ -26,11 +26,21 @@ type RouterManager struct {
 type Router struct {
 	XMLName   xml.Name                   `xml:"router"`
 	Hostname  string                     `xml:"hostname"`
+	Name      string                     `xml:"name,attr"`
 	Port      int                        `xml:"port"`
 	SSID      string                     `xml:"ssid"`
 	Password  string                     `xml:"password"`
 	Setup     bool                       `xml:"setup"`
 	Interface *wifimanager.WifiInterface `xml:"-"`
+}
+
+// RouterIdentity is used for more granular router
+// identification in the event of multiple routers
+// with the same name.
+type RouterIdentity struct {
+	XMLName  xml.Name `xml:"identity"`
+	Name     string   `xml:"name"`
+	Modifier string   `xml:"modifier"`
 }
 
 // BuildRouter returns an unconfigured Router struct
@@ -56,7 +66,7 @@ func (router *Router) IsSetup() bool {
 // UpdateSetup checks the required fields and updates
 // the setup field to reflect their status
 func (router *Router) UpdateSetup() {
-	if router.SSID != "" {
+	if router.SSID != "" || router.Name != "" {
 		router.Setup = true
 	}
 }
@@ -148,7 +158,7 @@ func (container *RouterManager) UnmarshalXML(decoder *xml.Decoder, start xml.Sta
 		return decodeErr
 	}
 	for _, router := range tempContainer.Routers {
-		tempRouters[router.Hostname] = router
+		tempRouters[router.Name] = router
 	}
 	*container = RouterManager{tempContainer.XMLName, tempRouters}
 	return nil

@@ -13,7 +13,6 @@ import (
 
 // Handler handles the different protobuf messages
 type Handler struct {
-	room          *Room
 	router        *Router
 	deviceManager *DeviceManager
 	routerManager *RouterManager
@@ -27,7 +26,7 @@ func (handler *Handler) Handle(proto *packets.Packet, writer io.Writer) error {
 	if seenPackets[proto.GetHeader().Id] {
 		return errors.New("handler: already received packet #" + proto.GetHeader().Id)
 	}
-	if proto.GetHeader().Destination != "" && proto.GetHeader().Destination != handler.router.Hostname {
+	if proto.GetHeader().Destination != "" && proto.GetHeader().Destination != handler.router.Name {
 		return handler.BroadcastProto(proto)
 	}
 	if handler.router.IsSetup() {
@@ -36,8 +35,6 @@ func (handler *Handler) Handle(proto *packets.Packet, writer io.Writer) error {
 			return handler.HandleIntroductionPassive(proto, writer)
 		case *packets.Packet_RouterConfigReq:
 			return handler.HandleRouterConfigurationRequest(proto, writer)
-		case *packets.Packet_RoomConfigReq:
-			return handler.HandleRoomConfigurationRequest(proto, writer)
 		case *packets.Packet_DeviceTransfer:
 			return handler.HandleDeviceTransferPassive(proto, writer)
 		case *packets.Packet_Command:
@@ -58,7 +55,7 @@ func (handler *Handler) Handle(proto *packets.Packet, writer io.Writer) error {
 // BroadcastProto resends the provided packet to
 // all other known routers
 func (handler *Handler) BroadcastProto(packet *packets.Packet) error {
-	packet.GetHeader().Route = append(packet.GetHeader().Route, handler.router.Hostname)
+	packet.GetHeader().Route = append(packet.GetHeader().Route, handler.router.Name)
 	for _, router := range handler.routerManager.Routers {
 		writeErr := handler.WriteProtoToDest(router.Hostname, router.Port, packet)
 		if writeErr != nil {
@@ -118,7 +115,7 @@ func (handler *Handler) preparePacket(packet *packets.Packet) ([]byte, error) {
 // received packet.
 func (handler *Handler) BuildResponseHeader(request *packets.Packet) *packets.Packet_Header {
 	return &packets.Packet_Header{
-		Origin:      handler.router.Hostname,
+		Origin:      handler.router.Name,
 		Destination: request.GetHeader().Origin,
 		Id:          request.GetHeader().Id,
 		Type:        packets.Packet_Header_RESPONSE,
@@ -152,35 +149,18 @@ func (handler *Handler) HandleRouterConfigurationRequest(packet *packets.Packet,
 	var body *packets.RouterConfigurationRequest
 	body = packet.GetRouterConfigReq()
 	Info.Println("handler: received RouterConfigurationRequest: ", body.String())
-	if body.Ssid != "" {
-		Info.Println("handler: updating router SSID from " + handler.router.SSID + " to " + body.Ssid)
-		handler.router.SSID = body.Ssid
-	}
-	if body.Password != "" {
-		Info.Println("handler: updating router password from " + handler.router.Password + " to " + body.Password)
-		handler.router.Password = body.Password
-	}
+	Info.Println("handler: updating router SSID from " + handler.router.SSID + " to " + body.Ssid)
+	handler.router.SSID = body.Ssid
+	Info.Println("handler: updating router password from " + handler.router.Password + " to " + body.Password)
+	handler.router.Password = body.Password
+	Info.Println("handler: updating router name from " + handler.router.Name + " to " + body.Name)
+	handler.router.Name = body.Name
 	handler.router.UpdateSetup()
 	routerErr := handler.router.Initialize()
 	if routerErr != nil {
 		Error.Println(handler.SendResponseError(routerErr, packet, writer))
 		return routerErr
 	}
-	return nil
-}
-
-// HandleRoomConfigurationRequest updates the room to match the provided fields
-func (handler *Handler) HandleRoomConfigurationRequest(packet *packets.Packet, writer io.Writer) error {
-	var body *packets.RoomConfigurationRequest
-	body = packet.GetRoomConfigReq()
-	Info.Println("handler: received RoomConfigurationRequest: ", body.String())
-	if body.Name == "" {
-		nameErr := errors.New("handler: invalid room configuration packet; must include valid room name")
-		Error.Println(handler.SendResponseError(nameErr, packet, writer))
-		return nameErr
-	}
-	Info.Println("handler: updating room name from " + handler.room.Name + " to " + body.Name)
-	handler.room.Name = body.Name
 	return nil
 }
 

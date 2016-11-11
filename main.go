@@ -39,8 +39,6 @@ var (
 	configPath = "./config.xml"
 	// config is the initialized config struct
 	config *Config
-	// room is the room of the current Definer
-	room *Room
 	// router is the router of the current Definer
 	router *Router
 	// deviceManager contains the devices the
@@ -67,20 +65,19 @@ func main() {
 	}
 	Info.Println("Config loaded!")
 	router = config.Router
-	room = config.Room
 	deviceManager = config.DeviceManager
 	routerManager = config.RouterManager
 	Info.Println("Initializing Cleanup Handler...")
 	InitCleanup(config)
 	Info.Println("Cleanup Handler initialized!")
 	Info.Println("Initialize Servers...")
-	handler := &Handler{room, router, deviceManager, routerManager}
-	InitServers(room, router, handler, deviceManager)
+	handler := &Handler{router: router, deviceManager: deviceManager, routerManager: routerManager}
+	InitServers(router, handler, deviceManager)
 	go ConsoleServ.Listen()
 	go WifiServ.Listen()
 	Info.Println("Servers initialized!")
 	Info.Println("Initializing Router...")
-	routerInitErr := config.Router.Initialize()
+	routerInitErr := router.Initialize()
 	if routerInitErr != nil {
 		Error.Println(routerInitErr)
 	}

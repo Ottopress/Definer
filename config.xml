@@ -1,15 +1,11 @@
 <config>
-    <router>
+    <router name="">
         <hostname>bluebottle.local</hostname>
         <port>46290</port>
-        <ssid>NUS-Student</ssid>
+        <ssid></ssid>
         <password></password>
         <setup>true</setup>
     </router>
-    <room>
-        <name>Cafe</name>
-        <setup>true</setup>
-    </room>
     <devices>
         <device id="22FAA7">
             <version>2</version>

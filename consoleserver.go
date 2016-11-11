@@ -15,7 +15,6 @@ import (
 // ConsoleServer repersents a console-based communication system
 type ConsoleServer struct {
 	handler       *Handler
-	room          *Room
 	router        *Router
 	deviceManager *DeviceManager
 }
@@ -70,8 +69,6 @@ func (console *ConsoleServer) toProto(args ...string) (*packets.Packet, error) {
 		return console.buildRouterRequest(argMap)
 	case "command":
 		return console.buildCommand(argMap)
-	case "room":
-		return nil, console.roomCommand(argMap)
 	case "devices":
 		return nil, console.deviceCommand(argMap)
 	}
@@ -88,7 +85,7 @@ func (console *ConsoleServer) buildIntroductionServer(args map[string]string) (*
 	return &packets.Packet{
 		Header: &packets.Packet_Header{
 			Origin:      console.router.Hostname,
-			Destination: console.router.Hostname,
+			Destination: console.router.Name,
 			Id:          "0",
 			Type:        packets.Packet_Header_PASSIVE,
 		},
@@ -104,7 +101,7 @@ func (console *ConsoleServer) buildRouterRequest(args map[string]string) (*packe
 	return &packets.Packet{
 		Header: &packets.Packet_Header{
 			Origin:      console.router.Hostname,
-			Destination: console.router.Hostname,
+			Destination: console.router.Name,
 			Id:          "0",
 			Type:        packets.Packet_Header_REQUEST,
 		},
@@ -137,7 +134,7 @@ func (console *ConsoleServer) buildCommand(args map[string]string) (*packets.Pac
 	return &packets.Packet{
 		Header: &packets.Packet_Header{
 			Origin:      console.router.Hostname,
-			Destination: console.router.Hostname,
+			Destination: console.router.Name,
 			Id:          args["id"],
 			Type:        packets.Packet_Header_REQUEST,
 		},
@@ -145,14 +142,6 @@ func (console *ConsoleServer) buildCommand(args map[string]string) (*packets.Pac
 			Command: command,
 		},
 	}, nil
-}
-
-func (console *ConsoleServer) roomCommand(args map[string]string) error {
-	if args["debug"] == "true" {
-		b, _ := xml.MarshalIndent(console.room, "", "  ")
-		Info.Println(string(b))
-	}
-	return nil
 }
 
 func (console *ConsoleServer) deviceCommand(args map[string]string) error {

@@ -16,7 +16,6 @@ It has these top-level messages:
 	GeneralErrorResponse
 	IntroductionPassive
 	RouterConfigurationRequest
-	RoomConfigurationRequest
 	DeviceTransferPassive
 */
 package packets

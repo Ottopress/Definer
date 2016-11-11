@@ -13,7 +13,6 @@ import (
 // WifiServer represents a wifi-based communication system
 type WifiServer struct {
 	handler *Handler
-	room    *Room
 	router  *Router
 }
 
