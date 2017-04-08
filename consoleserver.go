@@ -4,17 +4,15 @@ import (
 	"bufio"
 	"encoding/json"
 	"encoding/xml"
-	"errors"
 	"os"
 
 	"github.com/golang/protobuf/proto"
 
-	"github.com/ottopress/Definer/protos"
+	"github.com/ottopress/definer/protos"
 	"runtime"
-	"strconv"
 )
 
-// ConsoleServer repersents a console-based communication system
+// ConsoleServer represents a console-based communication system
 type ConsoleServer struct {
 	handler       *Handler
 	router        *Router
@@ -44,12 +42,16 @@ var (
 	}
 	routerCommands = map[string]commandHandler{
 		//"packet":
+		"config": (*ConsoleServer).routerConfig,
+	}
+	routerPackets = map[string]commandHandler{
+
 	}
 	deviceCommands = map[string]commandHandler{
-		//"packet":
+		"packet": (*ConsoleServer).devicePacket,
 	}
-	packetCommands = map[string]commandHandler{
-
+	devicePackets = map[string]commandHandler{
+		"command": (*ConsoleServer).devicePacketCommand,
 	}
 )
 
@@ -84,8 +86,11 @@ func (console *ConsoleServer) Listen() {
 }
 
 func (console *ConsoleServer) toProto(args []commandArgument) (*packets.Packet, error) {
+	if len(args) == 0 {
+		return nil, nil
+	}
 	if args[0].flag || args[0].value != "" {
-		Info.Println("console: Must execute command before passing arguments.")
+		Info.Println("Must execute command before passing arguments.")
 		return nil, nil
 	}
 	return coreCommands[args[0].argument](console, args[1:])
@@ -93,24 +98,134 @@ func (console *ConsoleServer) toProto(args []commandArgument) (*packets.Packet, 
 
 func (console *ConsoleServer) handleRouter(args []commandArgument) (*packets.Packet, error) {
 	subCommandIndex := 0
-	for ; args[subCommandIndex].flag || args[subCommandIndex].value != ""; subCommandIndex++ {}
-	return routerCommands[args[subCommandIndex]](console, args[1:])
+	for ; subCommandIndex < len(args) && (args[subCommandIndex].flag || !args[subCommandIndex].nilVal); subCommandIndex++ {}
+	if subCommandIndex == len(args) {
+		Info.Println("No valid sub-commands passed to command \"router\".")
+		return nil, nil
+	}
+	return routerCommands[args[subCommandIndex].argument](console, args[subCommandIndex+1:])
+}
+
+func (console *ConsoleServer) routerPacket(args []commandArgument) (*packets.Packet, error) {
+	packetIndex := 0
+	for ; packetIndex < len(args) && (args[packetIndex].flag || !args[packetIndex].nilVal) ; packetIndex++ {}
+	if packetIndex == len(args) {
+		Info.Println("No valid sub-commands passed to command \"router packet\".")
+		return nil, nil
+	}
+	return routerPackets[args[packetIndex].argument](console, args[packetIndex+1:])
+}
+
+func (console *ConsoleServer) routerConfig(args []commandArgument) (*packets.Packet, error) {
+	header, headerIndex, headerErr := console.buildPacketHeader(args, packets.Packet_Header_REQUEST)
+	if headerErr != nil {
+		return nil, headerErr
+	}
+	config := &packets.RouterConfigurationRequest{}
+	bodyIndex := headerIndex
+	for ; bodyIndex < len(args) && !args[bodyIndex].nilVal ; bodyIndex++ {
+		value := args[bodyIndex].value
+		switch args[bodyIndex].argument {
+		case "ssid":
+			config.Ssid = value
+		case "password":
+			config.Password = value
+		}
+	}
+	packet := &packets.Packet {
+		Header: header,
+		Body: &packets.Packet_RouterConfigReq{
+			RouterConfigReq: config,
+		},
+	}
+	return packet, nil
 }
 
 func (console *ConsoleServer) handleDevice(args []commandArgument) (*packets.Packet, error) {
 	subCommandIndex := 0
-	for ; args[subCommandIndex].flag || args[subCommandIndex].value != ""; subCommandIndex++ {}
-	return routerCommands[args[subCommandIndex]](console, args[1:])
+	Info.Println(args)
+	for ; subCommandIndex < len(args) && (args[subCommandIndex].flag || !args[subCommandIndex].nilVal); subCommandIndex++ {
+		switch args[subCommandIndex].argument {
+		case "list":
+			if args[subCommandIndex].flag {
+				b, _ := xml.MarshalIndent(console.deviceManager, "", "    ")
+				Info.Println(string(b))
+				return nil, nil
+			}
+		}
+	}
+	if subCommandIndex == len(args) {
+		Info.Println("No valid sub-commands passed to command \"device\".")
+		return nil, nil
+	}
+	Info.Println(subCommandIndex, len(args))
+	return deviceCommands[args[subCommandIndex].argument](console, args[subCommandIndex+1:])
 }
 
-func (console *ConsoleServer) buildPacketHeader(args []commandArgument, headerType packets.Packet_Header_Type) (*packets.Packet_Header, error) {
+func (console *ConsoleServer) devicePacket(args []commandArgument) (*packets.Packet, error) {
+	packetIndex := 0
+	for ; packetIndex < len(args) && (args[packetIndex].flag || !args[packetIndex].nilVal) ; packetIndex++ {}
+	if packetIndex == len(args) {
+		Info.Println("No valid sub-commands passed to command \"device packet\".")
+		return nil, nil
+	}
+	return devicePackets[args[packetIndex].argument](console, args[packetIndex+1:])
+}
+
+func (console *ConsoleServer) devicePacketCommand(args []commandArgument) (*packets.Packet, error) {
+	header, headerIndex, headerErr := console.buildPacketHeader(args, packets.Packet_Header_REQUEST)
+	if headerErr != nil {
+		return nil, headerErr
+	}
+	device, deviceIndex := console.buildPacketCommandHeader(args[headerIndex:])
+	execute := &packets.Execute{}
+	for i := headerIndex + deviceIndex; i < len(args) && (args[i].flag || !args[i].nilVal); i++ {
+		value := args[i].value
+		switch args[i].argument {
+		case "core":
+			execute.Core = value
+		case "parameter":
+			execute.Parameters = []string{value}
+		}
+	}
+	packet := &packets.Packet{
+		Header: header,
+		Body: &packets.Packet_Command {
+			Command: &packets.Command{
+				Device: device,
+				Body: &packets.Command_Execute{
+					Execute: execute,
+				},
+			},
+		},
+	}
+	return packet, nil
+}
+
+func (console *ConsoleServer) buildPacketCommandHeader(args []commandArgument) (*packets.Command_Device, int) {
+	bodyIndex := 0
+	device := &packets.Command_Device{}
+	for ; bodyIndex < len(args) && (len(args[bodyIndex].argument) > 3 && args[bodyIndex].argument[:2] == "b.") && (args[bodyIndex].flag || !args[bodyIndex].nilVal); bodyIndex++ {
+		value := args[bodyIndex].value
+		switch args[bodyIndex].argument[2:] {
+		case "core":
+			device.Core = value
+		case "modifier":
+			device.Modifier = value
+		}
+	}
+	return device, bodyIndex
+}
+
+func (console *ConsoleServer) buildPacketHeader(args []commandArgument, headerType packets.Packet_Header_Type) (*packets.Packet_Header, int, error) {
 	bodyIndex := 0
 	header := &packets.Packet_Header{
 		Origin: console.router.Hostname,
+		Destination: console.router.Name,
 		Id: "0",
 		Type: headerType,
 	}
-	for ; args[bodyIndex].argument[:2] == "p." && (args[bodyIndex].flag || !args[bodyIndex].nilVal); bodyIndex++ {
+	for ; bodyIndex < len(args) && (len(args[bodyIndex].argument) > 3 && args[bodyIndex].argument[:2] == "b.") && (args[bodyIndex].flag || !args[bodyIndex].nilVal); bodyIndex++ {
 		value := args[bodyIndex].value
 		switch args[bodyIndex].argument[2:] {
 		case "id":
@@ -128,7 +243,7 @@ func (console *ConsoleServer) buildPacketHeader(args []commandArgument, headerTy
 			}
 		}
 	}
-	return header, nil
+	return header, bodyIndex, nil
 }
 
 func (console *ConsoleServer) buildIntroductionServer(args map[string]string) (*packets.Packet, error) {
@@ -151,61 +266,6 @@ func (console *ConsoleServer) buildIntroductionServer(args map[string]string) (*
 			},
 		},
 	}, nil
-}
-
-func (console *ConsoleServer) buildRouterRequest(args map[string]string) (*packets.Packet, error) {
-	return &packets.Packet{
-		Header: &packets.Packet_Header{
-			Origin:      console.router.Hostname,
-			Destination: console.router.Name,
-			Id:          "0",
-			Type:        packets.Packet_Header_REQUEST,
-		},
-		Body: &packets.Packet_RouterConfigReq{
-			RouterConfigReq: &packets.RouterConfigurationRequest{
-				Ssid:     args["ssid"],
-				Password: args["password"],
-			},
-		},
-	}, nil
-}
-
-func (console *ConsoleServer) buildCommand(args map[string]string) (*packets.Packet, error) {
-	var command *packets.Command
-	switch args["type"] {
-	case "execute":
-		command = &packets.Command{
-			Device: &packets.Command_Device{
-				Core:     args["devcore"],
-				Modifier: args["devmod"],
-			},
-			Body: &packets.Command_Execute{
-				Execute: &packets.Execute{
-					Core:       args["core"],
-					Parameters: []string{args["parameter"]},
-				},
-			},
-		}
-	}
-	return &packets.Packet{
-		Header: &packets.Packet_Header{
-			Origin:      console.router.Hostname,
-			Destination: console.router.Name,
-			Id:          args["id"],
-			Type:        packets.Packet_Header_REQUEST,
-		},
-		Body: &packets.Packet_Command{
-			Command: command,
-		},
-	}, nil
-}
-
-func (console *ConsoleServer) deviceCommand(args map[string]string) error {
-	if args["list"] == "true" {
-		b, _ := xml.MarshalIndent(console.deviceManager, "", "    ")
-		Info.Println(string(b))
-	}
-	return nil
 }
 
 func (consoleOut *consoleOut) Write(p []byte) (int, error) {
@@ -237,6 +297,7 @@ func (console *ConsoleServer) toArgv(s string) []commandArgument {
 	currentQuoteChar := "\x00" // to distinguish between ' and " quotations
 	currentAssignment := false
 	// this allows to use "foo'bar"
+	emptyArg := commandArgument{nilVal: true}
 	currentArg := commandArgument{nilVal: true}
 	currentItem := ""
 	argv := []commandArgument{}
@@ -292,6 +353,7 @@ func (console *ConsoleServer) toArgv(s string) []commandArgument {
 					currentArg.argument = currentItem
 				}
 				argv = append(argv, currentArg)
+				currentArg = emptyArg
 				currentState = OutOfArg
 			case InArgQuote:
 				currentItem += c
@@ -340,6 +402,7 @@ func (console *ConsoleServer) toArgv(s string) []commandArgument {
 					currentArg.nilVal = false
 					currentItem = ""
 					currentAssignment = true
+					currentState = OutOfArg
 				}
 			case OutOfArg:
 				// do nothing?
@@ -351,7 +414,7 @@ func (console *ConsoleServer) toArgv(s string) []commandArgument {
 
 			case OutOfArg:
 				currentItem = ""
-				if isFlag(currentItem) {
+				if isFlag(c) && !currentAssignment{
 					currentArg.flag = true
 				} else {
 					currentItem += c
@@ -368,6 +431,7 @@ func (console *ConsoleServer) toArgv(s string) []commandArgument {
 			currentArg.argument = currentItem
 		}
 		argv = append(argv, currentArg)
+		currentArg = emptyArg
 	} else if currentState == InArgQuote {
 		panic("Starting quote has no ending quote.")
 	}
