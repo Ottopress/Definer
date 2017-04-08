@@ -84,8 +84,7 @@ func main() {
 	Info.Println("Router initialized!")
 	elapsed := time.Since(start).Seconds()
 	Info.Printf("Done! [took %.3f seconds]...", elapsed)
-	for {
-	}
+	for {}
 }
 
 // InitCleanup initializes the cleanup handler

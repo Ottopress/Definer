@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-var (
+const (
 	stackWifi      = "wifi"
 	stackBluetooth = "blue"
 )
