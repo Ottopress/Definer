@@ -143,7 +143,6 @@ func (console *ConsoleServer) routerConfig(args []commandArgument) (*packets.Pac
 
 func (console *ConsoleServer) handleDevice(args []commandArgument) (*packets.Packet, error) {
 	subCommandIndex := 0
-	Info.Println(args)
 	for ; subCommandIndex < len(args) && (args[subCommandIndex].flag || !args[subCommandIndex].nilVal); subCommandIndex++ {
 		switch args[subCommandIndex].argument {
 		case "list":
