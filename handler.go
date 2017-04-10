@@ -19,8 +19,6 @@ type Handler struct {
 	routerManager *RouterManager
 }
 
-type packetHandler func(*Handler, *packets.Packet, io.Writer) error
-
 var (
 	seenPackets map[string]bool
 )
@@ -59,15 +57,16 @@ func (handler *Handler) Handle(proto *packets.Packet, writer io.Writer) error {
 
 // BroadcastProto resends the provided packet to
 // all other known routers
-func (handler *Handler) BroadcastProto(packet *packets.Packet) error {
+func (handler *Handler) BroadcastProto(packet *packets.Packet) error   {
 	packet.GetHeader().Route = append(packet.GetHeader().Route, handler.router.Name)
+	var err error
 	for _, router := range handler.routerManager.Routers {
 		writeErr := handler.WriteProtoToDest(router.Hostname, router.Port, packet)
 		if writeErr != nil {
-			return writeErr
+			err = writeErr
 		}
 	}
-	return nil
+	return err
 }
 
 // WriteProto marshals and writes the provided packet
@@ -95,11 +94,9 @@ func (handler *Handler) WriteProtoToDest(dest string, port int, packet *packets.
 	if connErr != nil {
 		return connErr
 	}
+	defer conn.Close()
 	_, writeErr := conn.Write(packetData)
-	if writeErr != nil {
-		return writeErr
-	}
-	return nil
+	return writeErr
 }
 
 // preparePacket converts the packet into its raw form and
@@ -109,6 +106,9 @@ func (handler *Handler) preparePacket(packet *packets.Packet) ([]byte, error) {
 	protoData, protoErr := proto.Marshal(packet)
 	if protoErr != nil {
 		return protoData, protoErr
+	}
+	if len(protoData) >= 65535 {
+		return protoData, errors.New("Protobuf data too long")
 	}
 	protoLen := make([]byte, 2)
 	binary.BigEndian.PutUint16(protoLen, uint16(len(protoData)))
@@ -122,7 +122,7 @@ func (handler *Handler) BuildResponseHeader(request *packets.Packet) *packets.Pa
 	return &packets.Packet_Header{
 		Origin:      handler.router.Name,
 		Destination: request.GetHeader().Origin,
-		Id:          request.GetHeader().Id,
+		Id:          request.GetHeader().Id,//TODO If the response header has the same ID as the request, it'll be the same and will be already seen at ever yhop along the way and will be ignored
 		Type:        packets.Packet_Header_RESPONSE,
 	}
 }
@@ -151,8 +151,7 @@ func (handler *Handler) HandleIntroductionPassive(packet *packets.Packet, writer
 
 // HandleRouterConfigurationRequest updates the sent fields on the router
 func (handler *Handler) HandleRouterConfigurationRequest(packet *packets.Packet, writer io.Writer) error {
-	var body *packets.RouterConfigurationRequest
-	body = packet.GetRouterConfigReq()
+	body := packet.GetRouterConfigReq()
 	Info.Println("handler: received RouterConfigurationRequest: ", body.String())
 	Info.Println("handler: updating router SSID from " + handler.router.SSID + " to " + body.Ssid)
 	handler.router.SSID = body.Ssid
@@ -172,8 +171,7 @@ func (handler *Handler) HandleRouterConfigurationRequest(packet *packets.Packet,
 // HandleDeviceTransferPassive deletes the device if the device manager has it
 // and forwards the packet onto every router known.
 func (handler *Handler) HandleDeviceTransferPassive(packet *packets.Packet, writer io.Writer) error {
-	var body *packets.DeviceTransferPassive
-	body = packet.GetDeviceTransfer()
+	body := packet.GetDeviceTransfer()
 	Info.Println("handler: received DeviceTransferPassive: ", body.String())
 	if body.Device == "" {
 		return errors.New("handler: invalid device transfer packet; must include valid device name")
