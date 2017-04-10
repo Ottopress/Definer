@@ -76,10 +76,7 @@ func (handler *Handler) WriteProto(packet *packets.Packet, writer io.Writer) err
 		return prepErr
 	}
 	_, writerErr := writer.Write(protoData)
-	if writerErr != nil {
-		return writerErr
-	}
-	return nil
+	return writerErr
 }
 
 // WriteProtoToDest writes the provided proto to an alternate

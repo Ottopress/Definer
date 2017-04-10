@@ -19,7 +19,7 @@ type WifiServer struct {
 // Listen beings listening for incoming protobuf packets and hands them
 // off for parsing.
 func (wifiServ *WifiServer) Listen() {
-	ln, lnErr := net.Listen("tcp", ":"+strconv.Itoa(DefaultPort))
+	ln, lnErr := net.Listen("tcp", ":" + strconv.Itoa(DefaultPort))
 	if lnErr != nil {
 		Error.Println("wifiserv: couldn't start listener: " + lnErr.Error())
 		return
@@ -52,6 +52,7 @@ func (wifiServ *WifiServer) handleProto(conn net.Conn) {
 	handlerErr := wifiServ.handler.Handle(&protoPacket, conn)
 	if handlerErr != nil {
 		Error.Println("wifiserv: couldn't handle proto:", handlerErr)
+		return
 	}
 }
 
@@ -63,17 +64,11 @@ func (wifiServ *WifiServer) readProto(reader io.Reader) ([]byte, error) {
 	}
 	packetData := make([]byte, binary.BigEndian.Uint16(packetLen))
 	_, dataErr := reader.Read(packetData)
-	if dataErr != nil {
-		return packetData, dataErr
-	}
-	return packetData, nil
+	return packetData, dataErr
 }
 
 func (wifiServ *WifiServer) parseProto(protoData []byte) (packets.Packet, error) {
 	var packet packets.Packet
 	unmarshErr := proto.Unmarshal(protoData, &packet)
-	if unmarshErr != nil {
-		return packets.Packet{}, unmarshErr
-	}
-	return packet, nil
+	return packet,unmarshErr
 }
