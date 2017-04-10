@@ -85,18 +85,9 @@ func (device *Device) sendDataWifi(data []byte) error {
 	if connErr != nil {
 		return connErr
 	}
-	defer func() {
-		closeErr := conn.Close()
-		if closeErr != nil {
-			Error.Println(closeErr)
-			os.Exit(1)
-		}
-	}()
+	defer conn.Close()
 	_, writeErr := conn.Write(data)
-	if writeErr != nil {
-		return writeErr
-	}
-	return nil
+	return writeErr
 }
 
 // UnmarshalXML is overridden for clean initialization

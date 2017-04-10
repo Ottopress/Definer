@@ -98,7 +98,9 @@ func (console *ConsoleServer) toProto(args []commandArgument) (*packets.Packet, 
 
 func (console *ConsoleServer) handleRouter(args []commandArgument) (*packets.Packet, error) {
 	subCommandIndex := 0
-	for ; subCommandIndex < len(args) && (args[subCommandIndex].flag || !args[subCommandIndex].nilVal); subCommandIndex++ {}
+	for subCommandIndex < len(args) && (args[subCommandIndex].flag || !args[subCommandIndex].nilVal) {
+		subCommandIndex++
+	}
 	if subCommandIndex == len(args) {
 		Info.Println("No valid sub-commands passed to command \"router\".")
 		return nil, nil
@@ -108,7 +110,9 @@ func (console *ConsoleServer) handleRouter(args []commandArgument) (*packets.Pac
 
 func (console *ConsoleServer) routerPacket(args []commandArgument) (*packets.Packet, error) {
 	packetIndex := 0
-	for ; packetIndex < len(args) && (args[packetIndex].flag || !args[packetIndex].nilVal) ; packetIndex++ {}
+	for packetIndex < len(args) && (args[packetIndex].flag || !args[packetIndex].nilVal) {
+		packetIndex++
+	}
 	if packetIndex == len(args) {
 		Info.Println("No valid sub-commands passed to command \"router packet\".")
 		return nil, nil
@@ -122,8 +126,7 @@ func (console *ConsoleServer) routerConfig(args []commandArgument) (*packets.Pac
 		return nil, headerErr
 	}
 	config := &packets.RouterConfigurationRequest{}
-	bodyIndex := headerIndex
-	for ; bodyIndex < len(args) && !args[bodyIndex].nilVal ; bodyIndex++ {
+	for bodyIndex := headerIndex; bodyIndex < len(args) && !args[bodyIndex].nilVal ; bodyIndex++ {
 		value := args[bodyIndex].value
 		switch args[bodyIndex].argument {
 		case "ssid":
@@ -163,7 +166,9 @@ func (console *ConsoleServer) handleDevice(args []commandArgument) (*packets.Pac
 
 func (console *ConsoleServer) devicePacket(args []commandArgument) (*packets.Packet, error) {
 	packetIndex := 0
-	for ; packetIndex < len(args) && (args[packetIndex].flag || !args[packetIndex].nilVal) ; packetIndex++ {}
+	for packetIndex < len(args) && (args[packetIndex].flag || !args[packetIndex].nilVal) {
+		packetIndex++
+	}
 	if packetIndex == len(args) {
 		Info.Println("No valid sub-commands passed to command \"device packet\".")
 		return nil, nil
@@ -268,7 +273,7 @@ func (console *ConsoleServer) buildIntroductionServer(args map[string]string) (*
 }
 
 func (consoleOut *consoleOut) Write(p []byte) (int, error) {
-	proto, protoErr := consoleOut.parseProto(p[3 : len(p)-1])
+	proto, protoErr := consoleOut.parseProto(p[3:])
 	if protoErr != nil {
 		return 0, protoErr
 	}
@@ -279,10 +284,7 @@ func (consoleOut *consoleOut) Write(p []byte) (int, error) {
 func (consoleOut *consoleOut) parseProto(protoData []byte) (packets.Packet, error) {
 	var packet packets.Packet
 	unmarshErr := proto.Unmarshal(protoData, &packet)
-	if unmarshErr != nil {
-		return packets.Packet{}, unmarshErr
-	}
-	return packet, nil
+	return packet, unmarshErr
 }
 
 // ToArgv converts string s into an argv for exec.
