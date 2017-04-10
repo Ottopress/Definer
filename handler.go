@@ -9,7 +9,6 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	"github.com/ottopress/definer/protos"
-	"go/types"
 )
 
 // Handler handles the different protobuf messages
