@@ -9,6 +9,7 @@ import (
 	"github.com/golang/protobuf/proto"
 
 	"github.com/ottopress/definer/protos"
+	"go/types"
 )
 
 // Handler handles the different protobuf messages
@@ -18,7 +19,11 @@ type Handler struct {
 	routerManager *RouterManager
 }
 
-var seenPackets map[string]bool
+type packetHandler func(*Handler, *packets.Packet, io.Writer) error
+
+var (
+	seenPackets map[string]bool
+)
 
 // Handle checks the type of packet received and routes it to
 // the appropriate hadler method.
