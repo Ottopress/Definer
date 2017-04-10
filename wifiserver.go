@@ -24,13 +24,17 @@ func (wifiServ *WifiServer) Listen() {
 		Error.Println("wifiserv: couldn't start listener: " + lnErr.Error())
 		return
 	}
+	defer ln.Close()
 	for {
 		conn, connErr := ln.Accept()
 		if connErr != nil {
 			Error.Println("wifiserv: connection err: " + connErr.Error())
 			return
 		}
-		go wifiServ.handleProto(conn)
+		go func(conn net.Conn){
+			defer conn.Close()
+			wifiServ.handleProto(conn)
+		}(conn)
 	}
 }
 
