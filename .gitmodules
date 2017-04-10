@@ -1,3 +1,0 @@
-[submodule "Protobuf"]
-	path = Protobuf
-	url = git@github.com:ottopress/protobuf
